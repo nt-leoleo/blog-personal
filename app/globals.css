@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+:root {
+  --bg-0: #fdfcf9;
+  --bg-1: #eef6ff;
+  --ink-0: #111217;
+  --ink-1: #2f3542;
+  --line: #d9dee8;
+}
+
+@theme inline {
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-heading);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--ink-0);
+  font-family: var(--font-body), sans-serif;
+  background:
+    radial-gradient(circle at 8% -10%, #d6efe4 0%, transparent 42%),
+    radial-gradient(circle at 90% 0%, #dbe6ff 0%, transparent 36%),
+    linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 100%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading), serif;
+  letter-spacing: -0.01em;
+}
+
+.prose-blog p {
+  margin: 0.75rem 0;
+  line-height: 1.75;
+  color: var(--ink-1);
+}
+
+.file-link {
+  border: 1px solid var(--line);
+}
+
