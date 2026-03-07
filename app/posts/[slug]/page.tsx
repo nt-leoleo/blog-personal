@@ -11,6 +11,24 @@ type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
+type PostMediaItem = {
+  id: string;
+  url: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+};
+
+type PostCommentItem = {
+  id: string;
+  content: string;
+  createdAt: Date;
+  user: {
+    name: string | null;
+    email: string | null;
+  };
+};
+
 function renderPostBody(content: string) {
   return content
     .split(/\n{2,}/)
@@ -76,7 +94,7 @@ export default async function PostPage({ params }: PageProps) {
         <section className="space-y-4 rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
           <h2 className="text-2xl text-neutral-900">Adjuntos</h2>
           <div className="grid gap-4 md:grid-cols-2">
-            {post.media.map((file) => {
+            {post.media.map((file: PostMediaItem) => {
               if (file.mimeType.startsWith("image/")) {
                 return (
                   <figure key={file.id} className="overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50">
@@ -140,7 +158,7 @@ export default async function PostPage({ params }: PageProps) {
             </div>
           )}
 
-          {post.comments.map((comment) => (
+          {post.comments.map((comment: PostCommentItem) => (
             <div key={comment.id} className="rounded-2xl border border-neutral-200 bg-white p-4">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-500">
                 <span>{comment.user.name || comment.user.email || "Anonimo"}</span>
