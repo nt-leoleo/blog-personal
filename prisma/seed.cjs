@@ -1,11 +1,21 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-const { PrismaClient, Role } = require("@prisma/client");
-const { PrismaBetterSqlite3 } = require("@prisma/adapter-better-sqlite3");
+const { PrismaClient } = require("@prisma/client");
+const { PrismaPg } = require("@prisma/adapter-pg");
 const bcrypt = require("bcrypt");
 
-const adapter = new PrismaBetterSqlite3({
-  url: process.env.DATABASE_URL || "file:./dev.db",
-});
+const connectionString =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL_NON_POOLING ||
+  process.env.POSTGRES_URL;
+
+if (!connectionString) {
+  throw new Error(
+    "DATABASE_URL no definido. Configura Vercel Postgres o define DATABASE_URL en .env.",
+  );
+}
+
+const adapter = new PrismaPg({ connectionString });
 
 const prisma = new PrismaClient({ adapter });
 const defaultInstagramAdmin = "gazetheblackmoon";
@@ -26,7 +36,7 @@ async function main() {
         email: adminEmail,
         name: "Admin",
         password: passwordHash,
-        role: Role.ADMIN,
+        role: "ADMIN",
       },
     });
     console.log(`Admin creado: ${adminEmail}`);
@@ -42,7 +52,7 @@ async function main() {
 
   await prisma.user.updateMany({
     where: { instagramUsername: defaultInstagramAdmin },
-    data: { role: Role.ADMIN },
+    data: { role: "ADMIN" },
   });
   console.log(`Admin de Instagram configurado: ${defaultInstagramAdmin}`);
 

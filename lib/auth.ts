@@ -18,7 +18,10 @@ export const instagramEnabled = Boolean(
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
-  secret: process.env.NEXTAUTH_SECRET,
+  secret:
+    process.env.NEXTAUTH_SECRET ??
+    process.env.AUTH_SECRET ??
+    (process.env.NODE_ENV === "development" ? "dev-secret-change-me" : undefined),
   session: {
     strategy: "jwt",
   },

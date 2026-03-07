@@ -47,12 +47,12 @@ export default async function Home() {
   return (
     <div className="space-y-10">
       <section className="rounded-3xl border border-white/70 bg-white/70 p-8 shadow-sm backdrop-blur-sm">
-        <p className="text-sm font-medium uppercase tracking-[0.15em] text-neutral-500">wachina gay</p>
+        <p className="text-sm font-medium uppercase tracking-[0.15em] text-neutral-500">BLOG PERSONAL</p>
         <h1 className="mt-3 max-w-2xl text-4xl leading-tight text-neutral-900 md:text-5xl">
-          Aca subo mis virgadas
+          Aca subo mis webadas
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-neutral-600 md:text-lg">
-          Para comentar tenes que ingresar con cuenta de Instagram o con correo y clave; wachín.
+          Para comentar tenes que entrar con tu cuenta de instagram o correo
         </p>
       </section>
 
@@ -109,3 +109,4 @@ export default async function Home() {
     </div>
   );
 }
+
