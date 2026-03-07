@@ -7,6 +7,17 @@ import { authOptions } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import prisma from "@/lib/prisma";
 
+type AdminPostListItem = {
+  id: string;
+  title: string;
+  slug: string;
+  createdAt: Date;
+  _count: {
+    comments: number;
+    media: number;
+  };
+};
+
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
 
@@ -18,7 +29,7 @@ export default async function AdminPage() {
     redirect("/");
   }
 
-  const [posts, instagramAdmins] = await Promise.all([
+  const [posts, instagramAdmins]: [AdminPostListItem[], { username: string }[]] = await Promise.all([
     prisma.post.findMany({
       orderBy: {
         createdAt: "desc",
@@ -52,9 +63,7 @@ export default async function AdminPage() {
       </section>
 
       <PostEditor />
-      <InstagramAdminsManager
-        usernames={instagramAdmins.map((entry: { username: string }) => entry.username)}
-      />
+      <InstagramAdminsManager usernames={instagramAdmins.map((entry) => entry.username)} />
 
       <section className="space-y-3">
         <h2 className="text-2xl text-neutral-900">Tus publicaciones</h2>
