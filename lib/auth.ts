@@ -1,4 +1,3 @@
-import type { Role } from "@prisma/client";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -7,6 +6,7 @@ import InstagramProvider from "next-auth/providers/instagram";
 import bcrypt from "bcrypt";
 import { extractInstagramUsername } from "@/lib/instagram";
 import prisma from "@/lib/prisma";
+import type { UserRole } from "@/lib/roles";
 
 export const googleEnabled = Boolean(
   process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
@@ -95,7 +95,7 @@ export const authOptions: NextAuthOptions = {
         select: { id: true },
       });
 
-      const newRole: Role = adminRule ? "ADMIN" : "USER";
+      const newRole: UserRole = adminRule ? "ADMIN" : "USER";
 
       await prisma.user.update({
         where: { id: user.id },
