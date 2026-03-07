@@ -52,7 +52,9 @@ export default async function AdminPage() {
       </section>
 
       <PostEditor />
-      <InstagramAdminsManager usernames={instagramAdmins.map((entry) => entry.username)} />
+      <InstagramAdminsManager
+        usernames={instagramAdmins.map((entry: { username: string }) => entry.username)}
+      />
 
       <section className="space-y-3">
         <h2 className="text-2xl text-neutral-900">Tus publicaciones</h2>
