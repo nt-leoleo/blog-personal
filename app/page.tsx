@@ -2,6 +2,21 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { formatDate } from "@/lib/format";
 
+type HomePostItem = {
+  id: string;
+  slug: string;
+  title: string;
+  content: string;
+  createdAt: Date;
+  media: {
+    mimeType: string;
+  }[];
+  _count: {
+    comments: number;
+    media: number;
+  };
+};
+
 function mediaLabel(mimeType: string) {
   if (mimeType.startsWith("image/")) return "Foto";
   if (mimeType.startsWith("audio/")) return "Audio";
@@ -9,7 +24,7 @@ function mediaLabel(mimeType: string) {
 }
 
 export default async function Home() {
-  const posts = await prisma.post.findMany({
+  const posts: HomePostItem[] = await prisma.post.findMany({
     orderBy: {
       createdAt: "desc",
     },
@@ -94,4 +109,3 @@ export default async function Home() {
     </div>
   );
 }
-
