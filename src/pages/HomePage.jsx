@@ -38,7 +38,7 @@ export default function HomePage() {
       <section className="panel hero-panel">
         <p className="eyebrow">BLOG PERSONAL 143</p>
         <h1>Aca subo mis webadas</h1>
-        <p>Para comentar tenes que entrar con tu cuenta de Google o correo.</p>
+        <p>Para comentar tenés que entrar con tu cuenta de Google o correo, wachín.</p>
       </section>
 
       <section className="stack-md">
