@@ -73,31 +73,49 @@ export default function FirestoreDiagnostic() {
         addLog(`❌ Error de lectura: ${error.code} - ${error.message}`, 'error');
       }
 
-      // 4. Verificar permisos de escritura
+      // 4. Verificar permisos de escritura (con timeout corto)
       addLog('✍️ Verificando permisos de escritura...', 'info');
       try {
-        const testRef = collection(db, 'diagnostics');
-        const testDoc = await addDoc(testRef, {
-          test: true,
-          timestamp: serverTimestamp(),
-          userAgent: navigator.userAgent
+        const writeTimeout = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout de escritura (15s)')), 15000);
         });
+
+        const writeOperation = async () => {
+          const testRef = collection(db, 'diagnostics');
+          const testDoc = await addDoc(testRef, {
+            test: true,
+            timestamp: serverTimestamp(),
+            userAgent: navigator.userAgent
+          });
+          return testDoc;
+        };
+
+        const testDoc = await Promise.race([writeOperation(), writeTimeout]);
         
         results.writePermissions = { success: true, docId: testDoc.id };
         addLog(`✅ Escritura exitosa: documento ${testDoc.id}`, 'success');
       } catch (error) {
         results.writePermissions = { success: false, error: error.message, code: error.code };
-        addLog(`❌ Error de escritura: ${error.code} - ${error.message}`, 'error');
+        addLog(`❌ Error de escritura: ${error.code || 'TIMEOUT'} - ${error.message}`, 'error');
       }
 
-      // 5. Verificar colecciones específicas
+      // 5. Verificar colecciones específicas (con timeouts)
       addLog('📁 Verificando colecciones específicas...', 'info');
       const collections = ['posts', 'users', 'adminEmails'];
       
       for (const collectionName of collections) {
         try {
-          const collRef = collection(db, collectionName);
-          const snapshot = await getDocs(collRef);
+          const collectionTimeout = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Timeout de colección (10s)')), 10000);
+          });
+
+          const collectionOperation = async () => {
+            const collRef = collection(db, collectionName);
+            return await getDocs(collRef);
+          };
+
+          const snapshot = await Promise.race([collectionOperation(), collectionTimeout]);
+          
           results[`collection_${collectionName}`] = {
             exists: true,
             count: snapshot.size,
@@ -108,9 +126,9 @@ export default function FirestoreDiagnostic() {
           results[`collection_${collectionName}`] = {
             exists: false,
             error: error.message,
-            code: error.code
+            code: error.code || 'TIMEOUT'
           };
-          addLog(`❌ Error en colección '${collectionName}': ${error.code}`, 'error');
+          addLog(`❌ Error en colección '${collectionName}': ${error.code || 'TIMEOUT'}`, 'error');
         }
       }
 
@@ -136,14 +154,41 @@ export default function FirestoreDiagnostic() {
         }
       }
 
-      // 7. Información del navegador
+      // 7. Información del navegador y rendimiento
       results.browser = {
         userAgent: navigator.userAgent,
         online: navigator.onLine,
         cookieEnabled: navigator.cookieEnabled,
         language: navigator.language,
-        platform: navigator.platform
+        platform: navigator.platform,
+        connection: navigator.connection ? {
+          effectiveType: navigator.connection.effectiveType,
+          downlink: navigator.connection.downlink,
+          rtt: navigator.connection.rtt
+        } : 'No disponible'
       };
+
+      // 8. Información del proyecto Firebase
+      results.firebaseProject = {
+        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+        authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+        region: 'Detectando...'
+      };
+
+      // 9. Análisis de rendimiento
+      const readDuration = results.readPermissions?.duration;
+      if (readDuration) {
+        const durationMs = parseInt(readDuration.replace('ms', ''));
+        results.performanceAnalysis = {
+          readSpeed: durationMs > 5000 ? 'MUY LENTO' : durationMs > 2000 ? 'LENTO' : 'NORMAL',
+          possibleCauses: durationMs > 5000 ? [
+            'Región de Firebase muy lejana',
+            'Reglas de seguridad complejas',
+            'Throttling por uso excesivo',
+            'Problemas de red del ISP'
+          ] : ['Rendimiento normal']
+        };
+      }
 
       addLog('🎯 Diagnóstico completado', 'success');
 
