@@ -1,91 +1,80 @@
-# Blog Personal
+# Blog Personal (React + Firebase)
 
-Sitio de blog personal con estilo moderno/minimalista y soporte para:
+Blog personal migrado a React con Vite y Firebase.
 
-- Publicaciones de texto
-- Subida de fotos, audio y cualquier archivo
+## Funcionalidades
+
+- Publicaciones con texto
+- Subida de imagenes, audio y archivos
 - Grabacion de audio desde el navegador
-- Comentarios por usuarios autenticados
-- Login de usuarios por correo/clave
-- Login opcional con Google (OAuth)
-- Login opcional con Instagram (OAuth)
-- Cuenta admin para publicar contenido
+- Comentarios para usuarios autenticados
+- Login con email/password
+- Login con Google
+- Panel admin para crear publicaciones
+- Gestion de admins por email desde el panel
 
 ## Stack
 
-- Next.js (App Router)
-- Prisma + PostgreSQL
-- NextAuth
-- Tailwind CSS
+- React 19
+- Vite
+- React Router
+- Firebase Auth
+- Firestore
+- Firebase Storage
 
-## 1) Instalar
+## Requisitos
+
+- Node.js 18+ (recomendado 20+)
+- Proyecto Firebase con Auth, Firestore y Storage habilitados
+
+## Instalacion
 
 ```bash
 npm install
 ```
 
-## 2) Variables de entorno
+## Variables de entorno
 
-Copia `.env.example` a `.env` y completa:
+Copiar `.env.example` a `.env` y completar:
 
-- `DATABASE_URL` (PostgreSQL)
-- `NEXTAUTH_SECRET`
-- (Opcional) `AUTH_SECRET` (alias de `NEXTAUTH_SECRET`)
-- `ADMIN_EMAIL`
-- `ADMIN_PASSWORD`
-- Opcional: `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`
-- Opcional: `INSTAGRAM_CLIENT_ID` y `INSTAGRAM_CLIENT_SECRET`
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
+- `VITE_ADMIN_EMAILS` (emails admin separados por coma)
 
-## 3) Base de datos
-
-```bash
-npm run db:push
-npm run db:seed
-```
-
-Esto crea:
-
-- Tablas en PostgreSQL
-- Cuenta admin inicial
-- Un post de ejemplo
-- Admin de Instagram inicial: `gazetheblackmoon`
-
-## 4) Levantar entorno dev
+## Desarrollo
 
 ```bash
 npm run dev
 ```
 
-## Accesos
+## Build produccion
 
-- Admin: usa `ADMIN_EMAIL` + `ADMIN_PASSWORD` y entra a `/admin`
-- Admin por Instagram: `@gazetheblackmoon` (y los que agregues en la seccion de configuracion de `/admin`)
-- Usuarios normales: se registran en `/register` para comentar
+```bash
+npm run build
+npm run preview
+```
 
-## Instagram Login
+## Rutas
 
-Para habilitar login con Instagram en desarrollo:
+- `/` listado de posts
+- `/posts/:slug` detalle del post y comentarios
+- `/login` login
+- `/register` registro
+- `/admin` panel de publicacion (solo admin)
 
-1. Crea una app en Meta for Developers (Instagram Basic Display).
-2. Define una URL publica `https` para tu app (ejemplo con ngrok: `https://tu-url.ngrok-free.app`).
-3. Configura `NEXTAUTH_URL` con esa URL.
-4. Configura `Valid OAuth Redirect URI` como:
-   - `https://tu-url.ngrok-free.app/api/auth/callback/instagram`
-5. Copia `Client ID` y `Client Secret` a `.env`.
+## Modelo de datos (Firestore)
 
-Ruta API de arranque de login Instagram:
+- `users/{uid}`
+- `adminEmails/{email}`
+- `posts/{postId}`
+- `posts/{postId}/comments/{commentId}`
 
-- `GET /api/instagram/login?callbackUrl=/`
+## Deploy
 
-Si no configuras estas variables, el sitio igual funciona con login por correo.
-
-## Deploy en Vercel
-
-1. Crea una base con Vercel Postgres.
-2. En Variables de Entorno del proyecto configura:
-   - `DATABASE_URL` (puede apuntar a `POSTGRES_PRISMA_URL` de Vercel)
-   - `NEXTAUTH_SECRET` (o `AUTH_SECRET`)
-   - `NEXTAUTH_URL` con tu dominio final (ej: `https://tu-sitio.vercel.app`)
-   - OAuth de Google/Instagram si los usas.
-3. Ejecuta una vez `npm run db:push` y `npm run db:seed` contra esa base.
+Se puede desplegar como sitio estatico (Vercel, Netlify, Firebase Hosting).
+Recordar configurar las mismas variables `VITE_*` en el proveedor de deploy.
 
