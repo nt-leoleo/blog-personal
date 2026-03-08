@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPost, fetchPosts } from '../lib/blog';
 import { formatBytes, formatDate } from '../lib/format';
 import { addAdminEmail, fetchAdminEmails, removeAdminEmail } from '../lib/users';
+import { sendPostNotification } from '../lib/notifications';
 import { useAuth } from '../contexts/AuthContext';
 
 const MAX_FILES = 20;
@@ -189,6 +190,9 @@ export default function AdminPage() {
         files: allFiles,
         user
       });
+
+      // Enviar notificación del nuevo post
+      sendPostNotification(title.trim());
 
       setTitle('');
       setContent('');
