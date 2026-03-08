@@ -8,9 +8,12 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { auth, googleProvider } from '../lib/firebase';
-import { ensureUserDocument, isEmailAdmin } from '../lib/users';
+import { ensureUserDocument } from '../lib/users';
 
 const AuthContext = createContext(null);
+
+// Cache para evitar múltiples llamadas a Firestore
+let userDocCache = new Map();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -29,7 +32,26 @@ export function AuthProvider({ children }) {
       setUser(currentUser);
 
       try {
+        // Verificar cache primero
+        const cacheKey = currentUser.uid;
+        if (userDocCache.has(cacheKey)) {
+          const cachedDoc = userDocCache.get(cacheKey);
+          // Cache válido por 10 minutos
+          if (Date.now() - cachedDoc.timestamp < 10 * 60 * 1000) {
+            setUserDoc(cachedDoc.data);
+            setLoading(false);
+            return;
+          }
+        }
+
         const profile = await ensureUserDocument(currentUser);
+        
+        // Actualizar cache
+        userDocCache.set(cacheKey, {
+          data: profile,
+          timestamp: Date.now()
+        });
+        
         setUserDoc(profile);
       } catch (error) {
         console.error('No se pudo sincronizar usuario en Firestore', error);
@@ -53,26 +75,31 @@ export function AuthProvider({ children }) {
       displayName: name?.trim() || credential.user.displayName
     });
 
+    // Actualizar cache
+    userDocCache.set(credential.user.uid, {
+      data: profile,
+      timestamp: Date.now()
+    });
+
     setUserDoc(profile);
     return credential.user;
   };
 
   const loginWithEmail = async ({ email, password }) => {
     const credential = await signInWithEmailAndPassword(auth, email, password);
-    // El rol se actualizará automáticamente en ensureUserDocument
-    const profile = await ensureUserDocument(credential.user);
-    setUserDoc(profile);
+    // El perfil se actualizará en onAuthStateChanged
     return credential.user;
   };
 
   const loginWithGoogle = async () => {
     const credential = await signInWithPopup(auth, googleProvider);
-    const profile = await ensureUserDocument(credential.user);
-    setUserDoc(profile);
+    // El perfil se actualizará en onAuthStateChanged
     return credential.user;
   };
 
   const logout = async () => {
+    // Limpiar cache al cerrar sesión
+    userDocCache.clear();
     await signOut(auth);
   };
 

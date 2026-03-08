@@ -18,6 +18,11 @@ const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || '')
 
 const adminEmailsCollection = collection(db, 'adminEmails');
 
+// Cache para admins
+let adminEmailsCache = null;
+let adminCacheTime = 0;
+const ADMIN_CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
 function normalizeEmail(email = '') {
   return String(email).trim().toLowerCase();
 }
@@ -35,6 +40,11 @@ export async function isEmailAdmin(email = '') {
     return true;
   }
 
+  // Verificar en cache
+  if (adminEmailsCache && (Date.now() - adminCacheTime) < ADMIN_CACHE_DURATION) {
+    return adminEmailsCache.includes(normalized);
+  }
+
   // Verificar en la base de datos
   try {
     const adminRef = doc(db, 'adminEmails', normalized);
@@ -47,8 +57,19 @@ export async function isEmailAdmin(email = '') {
 }
 
 export async function fetchAdminEmails() {
+  // Verificar cache
+  if (adminEmailsCache && (Date.now() - adminCacheTime) < ADMIN_CACHE_DURATION) {
+    return adminEmailsCache;
+  }
+
   const snapshot = await getDocs(query(adminEmailsCollection, orderBy('email', 'asc')));
-  return snapshot.docs.map((item) => item.data().email).filter(Boolean);
+  const emails = snapshot.docs.map((item) => item.data().email).filter(Boolean);
+  
+  // Actualizar cache
+  adminEmailsCache = emails;
+  adminCacheTime = Date.now();
+  
+  return emails;
 }
 
 export async function addAdminEmail(email) {
@@ -66,12 +87,19 @@ export async function addAdminEmail(email) {
     },
     { merge: true }
   );
+
+  // Invalidar cache
+  adminEmailsCache = null;
 }
 
 export async function removeAdminEmail(email) {
   const normalized = normalizeEmail(email);
   if (!normalized) return;
+  
   await deleteDoc(doc(db, 'adminEmails', normalized));
+  
+  // Invalidar cache
+  adminEmailsCache = null;
 }
 
 export async function ensureUserDocument(user) {

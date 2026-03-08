@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+﻿import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchPosts } from '../lib/blog';
 import { formatDate } from '../lib/format';
@@ -15,32 +15,23 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    let mounted = true;
-
-    const loadPosts = async () => {
-      try {
-        const data = await fetchPosts();
-        if (mounted) {
-          setPosts(data);
-        }
-      } catch (err) {
-        if (mounted) {
-          console.error(err);
-          setError('No se pudieron cargar las publicaciones.');
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadPosts();
-    return () => {
-      mounted = false;
-    };
+  const loadPosts = useCallback(async () => {
+    try {
+      setLoading(true);
+      // Cargar solo los primeros 10 posts para mejorar rendimiento
+      const data = await fetchPosts(true, 10);
+      setPosts(data);
+    } catch (err) {
+      console.error(err);
+      setError('No se pudieron cargar las publicaciones.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadPosts();
+  }, [loadPosts]);
 
   return (
     <div className="stack-xl">

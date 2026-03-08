@@ -10,12 +10,18 @@ import {
   query,
   serverTimestamp,
   updateDoc,
-  where
+  where,
+  startAfter
 } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { db, storage } from './firebase';
 
 const postsCollection = collection(db, 'posts');
+
+// Cache simple para posts
+let postsCache = null;
+let postsCacheTime = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
 const toDate = (value) => {
   if (!value) return null;
@@ -40,9 +46,35 @@ export const formatPostFromDoc = (docSnapshot) => {
   };
 };
 
-export async function fetchPosts() {
-  const snapshot = await getDocs(query(postsCollection, orderBy('createdAt', 'desc')));
-  return snapshot.docs.map(formatPostFromDoc);
+export async function fetchPosts(useCache = true, limitCount = 20) {
+  // Verificar cache
+  if (useCache && postsCache && (Date.now() - postsCacheTime) < CACHE_DURATION) {
+    return postsCache;
+  }
+
+  const snapshot = await getDocs(
+    query(
+      postsCollection, 
+      orderBy('createdAt', 'desc'),
+      limit(limitCount)
+    )
+  );
+  
+  const posts = snapshot.docs.map(formatPostFromDoc);
+  
+  // Actualizar cache
+  if (useCache) {
+    postsCache = posts;
+    postsCacheTime = Date.now();
+  }
+  
+  return posts;
+}
+
+// Invalidar cache cuando se crea un post
+export function invalidatePostsCache() {
+  postsCache = null;
+  postsCacheTime = 0;
 }
 
 export async function fetchPostBySlug(slug) {
@@ -53,9 +85,15 @@ export async function fetchPostBySlug(slug) {
   return formatPostFromDoc(snapshot.docs[0]);
 }
 
-export async function fetchComments(postId) {
+export async function fetchComments(postId, limitCount = 50) {
   const commentsRef = collection(db, 'posts', postId, 'comments');
-  const snapshot = await getDocs(query(commentsRef, orderBy('createdAt', 'desc')));
+  const snapshot = await getDocs(
+    query(
+      commentsRef, 
+      orderBy('createdAt', 'desc'),
+      limit(limitCount)
+    )
+  );
 
   return snapshot.docs.map((item) => {
     const data = item.data();
@@ -137,6 +175,9 @@ export async function createPost({ title, content, files, user }) {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
+
+  // Invalidar cache después de crear un post
+  invalidatePostsCache();
 
   return {
     id: created.id,

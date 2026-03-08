@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { createPost, fetchPosts } from '../lib/blog';
+import { createPost, fetchPosts, invalidatePostsCache } from '../lib/blog';
 import { formatBytes, formatDate } from '../lib/format';
 import { addAdminEmail, fetchAdminEmails, removeAdminEmail } from '../lib/users';
 import { sendPostNotification } from '../lib/notifications';
@@ -62,10 +62,11 @@ export default function AdminPage() {
   const allFiles = useMemo(() => [...files, ...recordedAudios], [files, recordedAudios]);
   const filesError = useMemo(() => validateFiles(allFiles), [allFiles]);
 
-  const loadPosts = async () => {
+  const loadPosts = useCallback(async () => {
     try {
       setLoadingPosts(true);
-      const data = await fetchPosts();
+      // Usar cache y limitar a 15 posts para admin
+      const data = await fetchPosts(true, 15);
       setPosts(data);
     } catch (error) {
       console.error(error);
@@ -73,9 +74,9 @@ export default function AdminPage() {
     } finally {
       setLoadingPosts(false);
     }
-  };
+  }, []);
 
-  const loadAdmins = async () => {
+  const loadAdmins = useCallback(async () => {
     try {
       setAdminsLoading(true);
       const data = await fetchAdminEmails();
@@ -86,7 +87,7 @@ export default function AdminPage() {
     } finally {
       setAdminsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadPosts();
@@ -194,6 +195,9 @@ export default function AdminPage() {
 
       // Enviar notificación del nuevo post
       sendPostNotification(title.trim());
+
+      // Invalidar cache para que se actualicen las listas
+      invalidatePostsCache();
 
       setTitle('');
       setContent('');
