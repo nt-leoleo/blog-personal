@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { createPost, fetchPosts, invalidatePostsCache } from '../lib/blog';
+import { createPost, fetchPosts } from '../lib/blog';
 import { formatBytes, formatDate } from '../lib/format';
 import { addAdminEmail, fetchAdminEmails, removeAdminEmail } from '../lib/users';
 import { sendPostNotification } from '../lib/notifications';
@@ -196,8 +196,8 @@ export default function AdminPage() {
       // Enviar notificación del nuevo post
       sendPostNotification(title.trim());
 
-      // Invalidar cache para que se actualicen las listas
-      invalidatePostsCache();
+      // El cache se invalida automáticamente en el proxy
+      // invalidatePostsCache(); // Ya no es necesario
 
       setTitle('');
       setContent('');
