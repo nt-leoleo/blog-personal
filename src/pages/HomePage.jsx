@@ -36,7 +36,7 @@ export default function HomePage() {
   return (
     <div className="stack-xl">
       <section className="panel hero-panel">
-        <p className="eyebrow">BLOG PERSONAL</p>
+        <p className="eyebrow">BLOG PERSONAL 143</p>
         <h1>Aca subo mis webadas</h1>
         <p>Para comentar tenes que entrar con tu cuenta de Google o correo.</p>
       </section>
