@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import AccountModal from './AccountModal';
+import { MoonIcon, SunIcon } from './Icons';
 
 export default function SiteHeader() {
   const { user, isAdmin } = useAuth();
@@ -29,7 +30,7 @@ export default function SiteHeader() {
               className="theme-toggle"
               title={isDarkMode ? 'Modo claro' : 'Modo nocturno'}
             >
-              {isDarkMode ? '☀️' : '🌙'}
+              {isDarkMode ? <SunIcon size={18} /> : <MoonIcon size={18} />}
             </button>
 
             {user ? (

@@ -845,3 +845,57 @@ textarea.input {
 .dark-mode .record-panel {
   background: #1a1a2e;
 }
+/* Estilos para íconos SVG */
+.btn-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.notification-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+  color: var(--primary);
+}
+
+.modal-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modal-title h3 {
+  margin: 0;
+}
+
+/* Mejoras para el tema toggle */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Estilos para íconos en modo oscuro */
+.dark-mode .notification-icon {
+  color: var(--primary);
+}
+
+/* Mejoras responsive para botones con íconos */
+@media (max-width: 820px) {
+  .btn-with-icon {
+    gap: 0.3rem;
+  }
+  
+  .btn-with-icon svg {
+    flex-shrink: 0;
+  }
+  
+  .notification-modal {
+    padding: 1.5rem;
+  }
+  
+  .notification-icon {
+    margin-bottom: 0.8rem;
+  }
+}

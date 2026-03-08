@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { updateProfile } from 'firebase/auth';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { XIcon, SettingsIcon } from './Icons';
 
 export default function AccountModal({ isOpen, onClose }) {
   const { user, logout } = useAuth();
@@ -42,8 +43,13 @@ export default function AccountModal({ isOpen, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>Configuración de cuenta</h3>
-          <button onClick={onClose} className="modal-close">×</button>
+          <div className="modal-title">
+            <SettingsIcon size={20} />
+            <h3>Configuración de cuenta</h3>
+          </div>
+          <button onClick={onClose} className="modal-close">
+            <XIcon size={18} />
+          </button>
         </div>
 
         <div className="account-info">

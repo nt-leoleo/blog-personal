@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { BellIcon } from './Icons';
 
 export default function NotificationModal() {
   const [showModal, setShowModal] = useState(false);
@@ -38,6 +39,9 @@ export default function NotificationModal() {
   return (
     <div className="notification-modal-overlay">
       <div className="notification-modal">
+        <div className="notification-icon">
+          <BellIcon size={32} />
+        </div>
         <h3>¡Activá las notificaciones!</h3>
         <p>Recibí una notificación cuando suba nuevos posts</p>
         <div className="notification-modal-actions">

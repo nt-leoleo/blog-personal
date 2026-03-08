@@ -5,6 +5,7 @@ import { formatBytes, formatDate } from '../lib/format';
 import { addAdminEmail, fetchAdminEmails, removeAdminEmail } from '../lib/users';
 import { sendPostNotification } from '../lib/notifications';
 import { useAuth } from '../contexts/AuthContext';
+import { MicIcon, MicOffIcon, TrashIcon } from '../components/Icons';
 
 const MAX_FILES = 20;
 const MAX_FILE_SIZE = 30 * 1024 * 1024;
@@ -297,8 +298,9 @@ export default function AdminPage() {
             <button
               type="button"
               onClick={isRecording ? stopRecording : startRecording}
-              className={`btn ${isRecording ? 'btn-danger' : 'btn-primary'}`}
+              className={`btn ${isRecording ? 'btn-danger' : 'btn-primary'} btn-with-icon`}
             >
+              {isRecording ? <MicOffIcon size={16} /> : <MicIcon size={16} />}
               {isRecording ? 'Detener grabacion' : 'Grabar audio'}
             </button>
             <span className="meta-text">
@@ -317,8 +319,9 @@ export default function AdminPage() {
                   <button
                     type="button"
                     onClick={() => removeRecordedAudio(index)}
-                    className="btn btn-outline btn-xs"
+                    className="btn btn-outline btn-xs btn-with-icon"
                   >
+                    <TrashIcon size={12} />
                     Quitar
                   </button>
                 </li>
@@ -380,8 +383,9 @@ export default function AdminPage() {
                   type="button"
                   onClick={() => handleRemoveAdmin(email)}
                   disabled={adminActionLoading}
-                  className="btn btn-outline btn-xs"
+                  className="btn btn-outline btn-xs btn-with-icon"
                 >
+                  <TrashIcon size={12} />
                   Quitar
                 </button>
               </div>
