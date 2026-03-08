@@ -43,6 +43,7 @@ Copiar `.env.example` a `.env` y completar:
 - `VITE_FIREBASE_STORAGE_BUCKET`
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
+- `VITE_FIREBASE_MEASUREMENT_ID` (opcional)
 - `VITE_ADMIN_EMAILS` (emails admin separados por coma)
 
 ## Desarrollo
