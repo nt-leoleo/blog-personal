@@ -16,7 +16,7 @@ export default function SiteHeader() {
         <div className="site-header__inner">
           <div className="site-header__left">
             <Link to="/" className="brand-link">
-              Blog personal
+              blog personal 143
             </Link>
             <nav className="site-nav">
               <NavLink to="/">Inicio</NavLink>
