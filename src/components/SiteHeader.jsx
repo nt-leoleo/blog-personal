@@ -6,9 +6,26 @@ import AccountModal from './AccountModal';
 import { MoonIcon, SunIcon } from './Icons';
 
 export default function SiteHeader() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, userDoc, isOffline } = useAuth();
   const { isDarkMode, toggleDarkMode } = useTheme();
   const [showAccountModal, setShowAccountModal] = useState(false);
+
+  // FORZAR ADMIN para debugging - verificar múltiples condiciones
+  const forceAdmin = user && (
+    isAdmin || 
+    userDoc?.role === 'ADMIN' ||
+    user.email === 'pederneraleonardo729@gmail.com' ||
+    user.email?.toLowerCase().includes('pederneraleonardo729')
+  );
+
+  console.log('🔍 SiteHeader - Estado de admin:', {
+    user: !!user,
+    email: user?.email,
+    isAdmin,
+    userDocRole: userDoc?.role,
+    forceAdmin,
+    isOffline
+  });
 
   return (
     <>
@@ -20,7 +37,17 @@ export default function SiteHeader() {
             </Link>
             <nav className="site-nav">
               <NavLink to="/">Inicio</NavLink>
-              {isAdmin && <NavLink to="/admin">Subir</NavLink>}
+              {/* Mostrar siempre para tu email específico */}
+              {(forceAdmin || user?.email === 'pederneraleonardo729@gmail.com') && (
+                <NavLink to="/admin" style={{ 
+                  background: forceAdmin ? 'green' : 'red',
+                  color: 'white',
+                  padding: '0.2rem 0.5rem',
+                  borderRadius: '4px'
+                }}>
+                  Subir {isOffline ? '(Offline)' : ''}
+                </NavLink>
+              )}
             </nav>
           </div>
 
