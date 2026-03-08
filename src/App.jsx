@@ -1,6 +1,7 @@
 ﻿import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import SiteHeader from './components/SiteHeader';
 import NotificationModal from './components/NotificationModal';
+import DebugAuth from './components/DebugAuth';
 import { useAuth } from './contexts/AuthContext';
 import AdminPage from './pages/AdminPage';
 import HomePage from './pages/HomePage';
@@ -34,6 +35,7 @@ export default function App() {
     <div className="app-shell">
       <SiteHeader />
       <NotificationModal />
+      <DebugAuth />
       <main className="app-main">
         <Routes>
           <Route path="/" element={<HomePage />} />

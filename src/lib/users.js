@@ -35,23 +35,31 @@ export async function isEmailAdmin(email = '') {
   const normalized = normalizeEmail(email);
   if (!normalized) return false;
 
+  console.log('🔍 Verificando admin para:', normalized);
+
   // Verificar primero en las variables de entorno
   if (isAdminEmail(normalized)) {
+    console.log('✅ Es admin por variable de entorno');
     return true;
   }
 
   // Verificar en cache
   if (adminEmailsCache && (Date.now() - adminCacheTime) < ADMIN_CACHE_DURATION) {
-    return adminEmailsCache.includes(normalized);
+    const isInCache = adminEmailsCache.includes(normalized);
+    console.log('📦 Verificado en cache:', isInCache);
+    return isInCache;
   }
 
   // Verificar en la base de datos
   try {
+    console.log('🔥 Consultando Firestore...');
     const adminRef = doc(db, 'adminEmails', normalized);
     const snapshot = await getDoc(adminRef);
-    return snapshot.exists();
+    const exists = snapshot.exists();
+    console.log('🔥 Resultado Firestore:', exists);
+    return exists;
   } catch (error) {
-    console.error('Error verificando admin en Firestore:', error);
+    console.error('❌ Error verificando admin en Firestore:', error);
     return false;
   }
 }
@@ -103,11 +111,16 @@ export async function removeAdminEmail(email) {
 }
 
 export async function ensureUserDocument(user) {
+  console.log('👤 Creando/actualizando documento de usuario para:', user.email);
+  
   const userRef = doc(db, 'users', user.uid);
   const snapshot = await getDoc(userRef);
 
   // Verificar si el usuario es admin basado en su email
-  const role = (await isEmailAdmin(user.email)) ? 'ADMIN' : 'USER';
+  const isAdmin = await isEmailAdmin(user.email);
+  const role = isAdmin ? 'ADMIN' : 'USER';
+  
+  console.log('🔑 Rol asignado:', role, 'para', user.email);
 
   const payload = {
     uid: user.uid,
@@ -119,6 +132,7 @@ export async function ensureUserDocument(user) {
   };
 
   if (!snapshot.exists()) {
+    console.log('📝 Creando nuevo documento de usuario');
     await setDoc(userRef, {
       ...payload,
       createdAt: serverTimestamp()
@@ -127,6 +141,7 @@ export async function ensureUserDocument(user) {
     return { ...payload, createdAt: new Date() };
   }
 
+  console.log('🔄 Actualizando documento existente');
   // Actualizar el rol cada vez que el usuario inicia sesión
   await setDoc(userRef, payload, { merge: true });
   

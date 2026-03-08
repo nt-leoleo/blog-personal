@@ -22,6 +22,8 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      console.log('🔐 Estado de autenticación cambió:', currentUser?.email || 'No logueado');
+      
       if (!currentUser) {
         setUser(null);
         setUserDoc(null);
@@ -38,13 +40,17 @@ export function AuthProvider({ children }) {
           const cachedDoc = userDocCache.get(cacheKey);
           // Cache válido por 10 minutos
           if (Date.now() - cachedDoc.timestamp < 10 * 60 * 1000) {
+            console.log('📦 Usando documento de usuario desde cache');
             setUserDoc(cachedDoc.data);
             setLoading(false);
             return;
           }
         }
 
+        console.log('🔄 Obteniendo documento de usuario desde Firestore');
         const profile = await ensureUserDocument(currentUser);
+        
+        console.log('✅ Documento de usuario obtenido:', profile);
         
         // Actualizar cache
         userDocCache.set(cacheKey, {
@@ -54,7 +60,7 @@ export function AuthProvider({ children }) {
         
         setUserDoc(profile);
       } catch (error) {
-        console.error('No se pudo sincronizar usuario en Firestore', error);
+        console.error('❌ No se pudo sincronizar usuario en Firestore', error);
       } finally {
         setLoading(false);
       }
@@ -104,6 +110,17 @@ export function AuthProvider({ children }) {
   };
 
   const isAdmin = Boolean(userDoc?.role === 'ADMIN');
+  
+  // Debug logging
+  useEffect(() => {
+    if (user && userDoc) {
+      console.log('🎯 Estado final de admin:', {
+        email: user.email,
+        role: userDoc.role,
+        isAdmin: isAdmin
+      });
+    }
+  }, [user, userDoc, isAdmin]);
 
   const value = useMemo(
     () => ({
