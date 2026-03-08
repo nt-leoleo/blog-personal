@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator, enableNetwork, disableNetwork } from 'firebase/firestore';
+import { getFirestore, connectFirestoreEmulator, enableNetwork, disableNetwork, initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const requiredKeys = [
@@ -34,10 +34,46 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+// Inicializar Firestore con configuración optimizada
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: false, // Usar WebSocket en lugar de long polling
+  cacheSizeBytes: 40000000, // 40MB de cache local
+});
+
+// Configuración de red optimizada
+let networkEnabled = true;
+
+export async function optimizeFirestoreConnection() {
+  try {
+    if (!networkEnabled) {
+      await enableNetwork(db);
+      networkEnabled = true;
+      console.log('🔄 Red de Firestore habilitada');
+    }
+  } catch (error) {
+    console.warn('⚠️ No se pudo optimizar la conexión:', error.message);
+  }
+}
+
+export async function handleFirestoreError(error) {
+  console.error('🔥 Error de Firestore:', error.code, error.message);
+  
+  // Si hay problemas de red, intentar reconectar
+  if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
+    try {
+      await disableNetwork(db);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await enableNetwork(db);
+      console.log('🔄 Reconexión de Firestore intentada');
+    } catch (reconnectError) {
+      console.error('❌ Error en reconexión:', reconnectError.message);
+    }
+  }
+}
 
 // Optimizaciones de rendimiento
 export { enableNetwork, disableNetwork };

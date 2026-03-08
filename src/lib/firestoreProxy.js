@@ -11,9 +11,9 @@ import {
   where,
   serverTimestamp 
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, handleFirestoreError, optimizeFirestoreConnection } from './firebase';
 
-// Cache local robusto
+// Cache local robusto con persistencia
 const localCache = {
   posts: new Map(),
   users: new Map(),
@@ -23,33 +23,75 @@ const localCache = {
   }
 };
 
-// Configuración
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
-const RETRY_ATTEMPTS = 3;
-const RETRY_DELAY = 1000;
+// Configuración optimizada
+const CACHE_DURATION = 3 * 60 * 1000; // 3 minutos (reducido)
+const RETRY_ATTEMPTS = 2; // Reducido de 3 a 2
+const RETRY_DELAY = 500; // Reducido de 1000 a 500ms
+const OPERATION_TIMEOUT = 8000; // 8 segundos máximo por operación
 
-// Función para reintentar operaciones
+// Cargar cache desde localStorage al iniciar
+function loadCacheFromStorage() {
+  try {
+    const savedPosts = localStorage.getItem('firestore_cache_posts');
+    const savedUsers = localStorage.getItem('firestore_cache_users');
+    const savedTimestamps = localStorage.getItem('firestore_cache_timestamps');
+    
+    if (savedPosts) {
+      const posts = JSON.parse(savedPosts);
+      posts.forEach(post => localCache.posts.set(post.id, post));
+    }
+    
+    if (savedUsers) {
+      const users = JSON.parse(savedUsers);
+      users.forEach(user => localCache.users.set(user.id, user));
+    }
+    
+    if (savedTimestamps) {
+      localCache.lastUpdate = JSON.parse(savedTimestamps);
+    }
+    
+    console.log('📦 Cache cargado desde localStorage');
+  } catch (error) {
+    console.warn('⚠️ Error cargando cache:', error.message);
+  }
+}
+
+// Guardar cache en localStorage
+function saveCacheToStorage() {
+  try {
+    localStorage.setItem('firestore_cache_posts', JSON.stringify(Array.from(localCache.posts.values())));
+    localStorage.setItem('firestore_cache_users', JSON.stringify(Array.from(localCache.users.values())));
+    localStorage.setItem('firestore_cache_timestamps', JSON.stringify(localCache.lastUpdate));
+  } catch (error) {
+    console.warn('⚠️ Error guardando cache:', error.message);
+  }
+}
+
+// Función para reintentar operaciones con timeout
 async function retryOperation(operation, attempts = RETRY_ATTEMPTS) {
   for (let i = 0; i < attempts; i++) {
     try {
-      return await operation();
+      // Agregar timeout a cada operación
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Operation timeout')), OPERATION_TIMEOUT);
+      });
+      
+      const result = await Promise.race([operation(), timeoutPromise]);
+      return result;
     } catch (error) {
-      // Solo loggear en el último intento para evitar spam
-      if (i === attempts - 1) {
-        console.log(`Operación falló después de ${attempts} intentos:`, error.message);
-      }
+      await handleFirestoreError(error);
       
       if (i === attempts - 1) {
         throw error;
       }
       
-      // Esperar antes del siguiente intento (backoff exponencial)
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * Math.pow(2, i)));
+      // Backoff exponencial más agresivo
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * Math.pow(1.5, i)));
     }
   }
 }
 
-// Wrapper para operaciones de lectura con cache
+// Wrapper para operaciones de lectura con cache persistente
 async function cachedRead(cacheKey, operation, cacheDuration = CACHE_DURATION) {
   const now = Date.now();
   const cached = localCache[cacheKey];
@@ -57,13 +99,18 @@ async function cachedRead(cacheKey, operation, cacheDuration = CACHE_DURATION) {
   
   // Usar cache si está disponible y no ha expirado
   if (cached && cached.size > 0 && (now - lastUpdate) < cacheDuration) {
-    console.log(`📦 Usando ${cacheKey} desde cache local`);
+    console.log(`📦 Usando ${cacheKey} desde cache (${cached.size} items)`);
     return Array.from(cached.values());
   }
   
   try {
+    // Optimizar conexión antes de la operación
+    await optimizeFirestoreConnection();
+    
     console.log(`🔄 Consultando ${cacheKey} desde Firestore...`);
+    const startTime = Date.now();
     const result = await retryOperation(operation);
+    const duration = Date.now() - startTime;
     
     // Actualizar cache
     localCache[cacheKey].clear();
@@ -72,15 +119,18 @@ async function cachedRead(cacheKey, operation, cacheDuration = CACHE_DURATION) {
     });
     localCache.lastUpdate[cacheKey] = now;
     
-    console.log(`✅ ${cacheKey} obtenidos y cacheados:`, result.length);
+    // Guardar en localStorage
+    saveCacheToStorage();
+    
+    console.log(`✅ ${cacheKey} obtenidos y cacheados: ${result.length} items en ${duration}ms`);
     return result;
     
   } catch (error) {
-    console.error(`❌ Error obteniendo ${cacheKey}:`, error);
+    console.error(`❌ Error obteniendo ${cacheKey}:`, error.message);
     
     // Si hay cache, usarlo como fallback
     if (cached && cached.size > 0) {
-      console.log(`🔄 Usando cache expirado de ${cacheKey} como fallback`);
+      console.log(`🔄 Usando cache expirado de ${cacheKey} como fallback (${cached.size} items)`);
       return Array.from(cached.values());
     }
     
@@ -92,8 +142,8 @@ async function cachedRead(cacheKey, operation, cacheDuration = CACHE_DURATION) {
 
 // API pública
 export const firestoreProxy = {
-  // Obtener posts
-  async getPosts(limitCount = 20) {
+  // Obtener posts con límite optimizado
+  async getPosts(limitCount = 10) { // Reducido de 20 a 10
     return cachedRead('posts', async () => {
       const snapshot = await getDocs(
         query(
@@ -112,7 +162,7 @@ export const firestoreProxy = {
     });
   },
 
-  // Obtener post por slug
+  // Obtener post por slug con cache local
   async getPostBySlug(slug) {
     try {
       return await retryOperation(async () => {
@@ -131,7 +181,17 @@ export const firestoreProxy = {
         };
       });
     } catch (error) {
-      console.error('Error obteniendo post por slug:', error);
+      console.error('Error obteniendo post por slug:', error.message);
+      
+      // Buscar en cache local
+      const cachedPosts = Array.from(localCache.posts.values());
+      const cachedPost = cachedPosts.find(post => post.slug === slug);
+      
+      if (cachedPost) {
+        console.log('📦 Post encontrado en cache local');
+        return cachedPost;
+      }
+      
       return null;
     }
   },
@@ -255,8 +315,7 @@ export const firestoreProxy = {
   }
 };
 
-// Inicializar cache
-localCache.posts = new Map();
-localCache.users = new Map();
+// Inicializar cache al cargar el módulo
+loadCacheFromStorage();
 
 export default firestoreProxy;
