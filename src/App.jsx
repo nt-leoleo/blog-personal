@@ -33,13 +33,17 @@ function ProtectedRoute({ children, requireAdmin = false }) {
 }
 
 export default function App() {
-  const { isBlocked, retry } = useFirestoreConnection();
+  const { isBlocked, retry, consecutiveFailures } = useFirestoreConnection();
 
   return (
     <div className="app-shell">
       <SiteHeader />
       <NotificationModal />
-      <FirestoreBlockedModal isBlocked={isBlocked} onRetry={retry} />
+      <FirestoreBlockedModal 
+        isBlocked={isBlocked} 
+        onRetry={retry} 
+        consecutiveFailures={consecutiveFailures}
+      />
       <DebugAuth />
       <main className="app-main">
         <Routes>

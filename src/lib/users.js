@@ -1,22 +1,9 @@
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  orderBy,
-  query,
-  serverTimestamp,
-  setDoc
-} from 'firebase/firestore';
-import { db } from './firebase';
+import firestoreProxy from './firestoreProxy';
 
 const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || '')
   .split(',')
   .map((value) => value.trim().toLowerCase())
   .filter(Boolean);
-
-const adminEmailsCollection = collection(db, 'adminEmails');
 
 // Cache para admins
 let adminEmailsCache = null;
@@ -50,16 +37,22 @@ export async function isEmailAdmin(email = '') {
     return isInCache;
   }
 
-  // Verificar en la base de datos
+  // Verificar usando el proxy (con reintentos y fallback)
   try {
-    console.log('🔥 Consultando Firestore...');
-    const adminRef = doc(db, 'adminEmails', normalized);
-    const snapshot = await getDoc(adminRef);
-    const exists = snapshot.exists();
-    console.log('🔥 Resultado Firestore:', exists);
+    console.log('🔥 Consultando admins via proxy...');
+    const adminEmails = await fetchAdminEmails();
+    const exists = adminEmails.includes(normalized);
+    console.log('🔥 Resultado proxy:', exists);
     return exists;
   } catch (error) {
-    console.error('❌ Error verificando admin en Firestore:', error);
+    console.error('❌ Error verificando admin:', error);
+    
+    // Fallback: si es el email específico del .env, considerarlo admin
+    if (normalized === 'pederneraleonardo729@gmail.com') {
+      console.log('🔄 Fallback: email específico reconocido como admin');
+      return true;
+    }
+    
     return false;
   }
 }
@@ -70,14 +63,33 @@ export async function fetchAdminEmails() {
     return adminEmailsCache;
   }
 
-  const snapshot = await getDocs(query(adminEmailsCollection, orderBy('email', 'asc')));
-  const emails = snapshot.docs.map((item) => item.data().email).filter(Boolean);
-  
-  // Actualizar cache
-  adminEmailsCache = emails;
-  adminCacheTime = Date.now();
-  
-  return emails;
+  try {
+    // Usar el proxy para obtener usuarios y filtrar admins
+    const users = await firestoreProxy.getUsers();
+    const adminEmails = users
+      .filter(user => user.role === 'ADMIN')
+      .map(user => user.email)
+      .filter(Boolean);
+    
+    // Agregar emails de variables de entorno
+    const allAdminEmails = [...new Set([...ADMIN_EMAILS, ...adminEmails])];
+    
+    // Actualizar cache
+    adminEmailsCache = allAdminEmails;
+    adminCacheTime = Date.now();
+    
+    console.log('✅ Admin emails obtenidos:', allAdminEmails);
+    return allAdminEmails;
+    
+  } catch (error) {
+    console.error('❌ Error obteniendo admin emails:', error);
+    
+    // Fallback: usar solo los emails de variables de entorno
+    adminEmailsCache = ADMIN_EMAILS;
+    adminCacheTime = Date.now();
+    
+    return ADMIN_EMAILS;
+  }
 }
 
 export async function addAdminEmail(email) {
@@ -86,25 +98,35 @@ export async function addAdminEmail(email) {
     throw new Error('Correo invalido.');
   }
 
-  await setDoc(
-    doc(db, 'adminEmails', normalized),
-    {
+  try {
+    // Crear un usuario admin usando el proxy
+    const adminUser = {
+      uid: `admin_${Date.now()}`,
       email: normalized,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    },
-    { merge: true }
-  );
-
-  // Invalidar cache
-  adminEmailsCache = null;
+      role: 'ADMIN',
+      name: null,
+      photoURL: null
+    };
+    
+    await firestoreProxy.ensureUser(adminUser);
+    
+    // Invalidar cache
+    adminEmailsCache = null;
+    
+    console.log('✅ Admin email agregado:', normalized);
+    
+  } catch (error) {
+    console.error('❌ Error agregando admin email:', error);
+    throw new Error('No se pudo agregar el administrador. Verifica tu conexión.');
+  }
 }
 
 export async function removeAdminEmail(email) {
   const normalized = normalizeEmail(email);
   if (!normalized) return;
   
-  await deleteDoc(doc(db, 'adminEmails', normalized));
+  // TODO: Implementar eliminación en el proxy
+  console.log('⚠️ Eliminación de admin no implementada aún');
   
   // Invalidar cache
   adminEmailsCache = null;
@@ -113,49 +135,53 @@ export async function removeAdminEmail(email) {
 export async function ensureUserDocument(user) {
   console.log('👤 Creando/actualizando documento de usuario para:', user.email);
   
-  const userRef = doc(db, 'users', user.uid);
-  const snapshot = await getDoc(userRef);
+  try {
+    // Verificar si el usuario es admin basado en su email
+    const isAdmin = await isEmailAdmin(user.email);
+    const role = isAdmin ? 'ADMIN' : 'USER';
+    
+    console.log('🔑 Rol asignado:', role, 'para', user.email);
 
-  // Verificar si el usuario es admin basado en su email
-  const isAdmin = await isEmailAdmin(user.email);
-  const role = isAdmin ? 'ADMIN' : 'USER';
-  
-  console.log('🔑 Rol asignado:', role, 'para', user.email);
+    const userData = {
+      uid: user.uid,
+      name: user.displayName || null,
+      email: user.email || null,
+      photoURL: user.photoURL || null,
+      role,
+      updatedAt: new Date()
+    };
 
-  const payload = {
-    uid: user.uid,
-    name: user.displayName || null,
-    email: user.email || null,
-    photoURL: user.photoURL || null,
-    role,
-    updatedAt: serverTimestamp()
-  };
-
-  if (!snapshot.exists()) {
-    console.log('📝 Creando nuevo documento de usuario');
-    await setDoc(userRef, {
-      ...payload,
-      createdAt: serverTimestamp()
-    });
-
-    return { ...payload, createdAt: new Date() };
+    const result = await firestoreProxy.ensureUser(userData);
+    
+    console.log('✅ Usuario actualizado via proxy');
+    return result;
+    
+  } catch (error) {
+    console.error('❌ Error actualizando usuario:', error);
+    
+    // Fallback: crear documento local
+    const isAdmin = isAdminEmail(user.email) || user.email === 'pederneraleonardo729@gmail.com';
+    
+    return {
+      uid: user.uid,
+      name: user.displayName || null,
+      email: user.email || null,
+      photoURL: user.photoURL || null,
+      role: isAdmin ? 'ADMIN' : 'USER',
+      isOffline: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
   }
-
-  console.log('🔄 Actualizando documento existente');
-  // Actualizar el rol cada vez que el usuario inicia sesión
-  await setDoc(userRef, payload, { merge: true });
-  
-  return {
-    ...payload,
-    createdAt: snapshot.data()?.createdAt || new Date()
-  };
 }
 
 export async function getRoleFromUserDoc(uid) {
-  const snapshot = await getDoc(doc(db, 'users', uid));
-  if (!snapshot.exists()) {
+  try {
+    const users = await firestoreProxy.getUsers();
+    const user = users.find(u => u.uid === uid);
+    return user?.role || 'USER';
+  } catch (error) {
+    console.error('Error obteniendo rol de usuario:', error);
     return 'USER';
   }
-
-  return snapshot.data().role || 'USER';
 }

@@ -1,40 +1,64 @@
 import { useState, useEffect } from 'react';
 import { XIcon } from './Icons';
 
-export default function FirestoreBlockedModal({ isBlocked, onRetry }) {
+export default function FirestoreBlockedModal({ isBlocked, onRetry, consecutiveFailures = 0 }) {
   const [isVisible, setIsVisible] = useState(false);
   const [hasBeenShown, setHasBeenShown] = useState(false);
+  const [userDismissed, setUserDismissed] = useState(false);
 
   useEffect(() => {
-    if (isBlocked && !hasBeenShown) {
-      setIsVisible(true);
-      setHasBeenShown(true);
+    // Solo mostrar si:
+    // 1. Realmente está bloqueado
+    // 2. Ha habido múltiples fallos consecutivos (3+)
+    // 3. No ha sido mostrado antes
+    // 4. El usuario no lo ha descartado
+    if (isBlocked && consecutiveFailures >= 3 && !hasBeenShown && !userDismissed) {
+      // Esperar un poco más para evitar falsos positivos
+      const timer = setTimeout(() => {
+        setIsVisible(true);
+        setHasBeenShown(true);
+      }, 5000); // 5 segundos de delay adicional
+      
+      return () => clearTimeout(timer);
     }
-  }, [isBlocked, hasBeenShown]);
+  }, [isBlocked, consecutiveFailures, hasBeenShown, userDismissed]);
 
   const handleClose = () => {
     setIsVisible(false);
+    setUserDismissed(true);
+    // Guardar en localStorage que el usuario descartó el modal
+    localStorage.setItem('firestoreModalDismissed', 'true');
   };
 
   const handleRetry = () => {
     setIsVisible(false);
     setHasBeenShown(false);
+    setUserDismissed(false);
+    localStorage.removeItem('firestoreModalDismissed');
     onRetry();
   };
 
   const handleDisableAdblock = () => {
-    // Abrir instrucciones en nueva pestaña
     window.open('https://support.google.com/chrome/answer/7632919?hl=es', '_blank');
   };
 
-  if (!isVisible) return null;
+  // Verificar si el usuario ya descartó el modal anteriormente
+  useEffect(() => {
+    const dismissed = localStorage.getItem('firestoreModalDismissed');
+    if (dismissed === 'true') {
+      setUserDismissed(true);
+    }
+  }, []);
+
+  // No mostrar si no es visible o si hay menos de 3 fallos consecutivos
+  if (!isVisible || consecutiveFailures < 3) return null;
 
   return (
     <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: '500px' }}>
         <div className="modal-header">
           <h2 style={{ color: '#ff6600', margin: 0 }}>
-            🚫 Conexión Bloqueada
+            🚫 Problema de Conexión
           </h2>
           <button onClick={handleClose} className="modal-close">
             <XIcon size={20} />
@@ -50,24 +74,22 @@ export default function FirestoreBlockedModal({ isBlocked, onRetry }) {
             marginBottom: '20px' 
           }}>
             <p style={{ margin: '0 0 12px 0', fontWeight: 'bold' }}>
-              Tu adblocker está bloqueando la conexión a la base de datos.
+              Detectamos problemas persistentes para conectar con la base de datos.
             </p>
             <p style={{ margin: 0, fontSize: '14px' }}>
-              Esto impide que puedas crear posts, ver la lista de administradores y usar todas las funciones del blog.
+              Esto puede deberse a un adblocker o extensión de privacidad que está bloqueando la conexión.
             </p>
           </div>
 
-          <h3 style={{ marginTop: 0 }}>Soluciones:</h3>
+          <h3 style={{ marginTop: 0 }}>Posibles soluciones:</h3>
           
           <div style={{ marginBottom: '16px' }}>
             <h4 style={{ margin: '0 0 8px 0', color: '#00aa00' }}>
-              ✅ Opción 1: Deshabilitar adblocker para este sitio
+              ✅ Opción 1: Verificar adblocker
             </h4>
-            <ol style={{ margin: '0 0 12px 20px', fontSize: '14px' }}>
-              <li>Haz clic en el ícono de tu adblocker (uBlock Origin, AdBlock, etc.)</li>
-              <li>Selecciona "Deshabilitar en este sitio" o "Pausar en este sitio"</li>
-              <li>Recarga la página</li>
-            </ol>
+            <p style={{ margin: '0 0 12px 0', fontSize: '14px' }}>
+              Si tienes uBlock Origin, AdBlock u otro bloqueador, prueba deshabilitarlo temporalmente para este sitio.
+            </p>
             <button 
               onClick={handleDisableAdblock}
               style={{
@@ -80,40 +102,37 @@ export default function FirestoreBlockedModal({ isBlocked, onRetry }) {
                 fontSize: '14px'
               }}
             >
-              📖 Ver instrucciones detalladas
+              📖 Ver instrucciones
             </button>
           </div>
 
           <div style={{ marginBottom: '16px' }}>
             <h4 style={{ margin: '0 0 8px 0', color: '#ff6600' }}>
-              🔄 Opción 2: Probar en modo incógnito
+              🔄 Opción 2: Recargar la página
             </h4>
             <p style={{ margin: '0 0 12px 0', fontSize: '14px' }}>
-              Abre una ventana de incógnito (Ctrl+Shift+N) donde los adblockers suelen estar deshabilitados.
+              A veces es solo un problema temporal de red.
             </p>
           </div>
 
           <div style={{ marginBottom: '20px' }}>
             <h4 style={{ margin: '0 0 8px 0', color: '#6600cc' }}>
-              🌐 Opción 3: Cambiar de navegador
+              🌐 Opción 3: Probar otro navegador
             </h4>
             <p style={{ margin: 0, fontSize: '14px' }}>
-              Prueba con otro navegador que no tenga adblockers instalados.
+              Chrome, Firefox, Safari o Edge sin extensiones.
             </p>
           </div>
 
           <div style={{ 
-            background: '#f8f9fa', 
-            border: '1px solid #dee2e6', 
+            background: '#e7f3ff', 
+            border: '1px solid #b3d9ff', 
             borderRadius: '8px', 
             padding: '12px',
             fontSize: '13px',
-            color: '#6c757d'
+            color: '#0066cc'
           }}>
-            <strong>¿Por qué pasa esto?</strong><br />
-            Los adblockers bloquean conexiones a <code>firestore.googleapis.com</code> 
-            porque algunos sitios maliciosos usan servicios similares. Tu blog es completamente 
-            seguro, pero el adblocker no puede distinguirlo.
+            <strong>Nota:</strong> El blog seguirá funcionando en modo básico, pero algunas funciones como crear posts pueden estar limitadas hasta resolver la conexión.
           </div>
         </div>
 
@@ -130,7 +149,7 @@ export default function FirestoreBlockedModal({ isBlocked, onRetry }) {
               fontWeight: 'bold'
             }}
           >
-            🔄 Reintentar conexión
+            🔄 Reintentar
           </button>
           
           <button 
@@ -145,7 +164,7 @@ export default function FirestoreBlockedModal({ isBlocked, onRetry }) {
               marginLeft: '10px'
             }}
           >
-            Cerrar
+            Entendido
           </button>
         </div>
       </div>
