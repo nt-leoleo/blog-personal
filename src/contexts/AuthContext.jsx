@@ -15,6 +15,37 @@ const AuthContext = createContext(null);
 // Cache para evitar múltiples llamadas a Firestore
 let userDocCache = new Map();
 
+// Sistema de manejo de errores
+let isFirestoreBlocked = false;
+let lastErrorTime = 0;
+const ERROR_COOLDOWN = 30000; // 30 segundos
+
+function shouldLogError() {
+  const now = Date.now();
+  if (now - lastErrorTime > ERROR_COOLDOWN) {
+    lastErrorTime = now;
+    return true;
+  }
+  return false;
+}
+
+function detectFirestoreBlock(error) {
+  const errorMessage = error?.message || '';
+  const isNetworkError = errorMessage.includes('ERR_BLOCKED_BY_CLIENT') || 
+                        errorMessage.includes('offline') ||
+                        errorMessage.includes('network') ||
+                        errorMessage.includes('Failed to get document');
+  
+  if (isNetworkError && !isFirestoreBlocked) {
+    isFirestoreBlocked = true;
+    if (shouldLogError()) {
+      console.warn('🚫 Firestore bloqueado por adblocker - Modo offline activado');
+    }
+  }
+  
+  return isNetworkError;
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [userDoc, setUserDoc] = useState(null);
@@ -48,6 +79,11 @@ export function AuthProvider({ children }) {
           }
         }
 
+        // Si ya sabemos que Firestore está bloqueado, usar fallback directamente
+        if (isFirestoreBlocked) {
+          throw new Error('Firestore bloqueado - usando fallback');
+        }
+
         console.log('🔄 Obteniendo documento de usuario desde Firestore');
         const profile = await ensureUserDocument(currentUser);
         
@@ -61,18 +97,30 @@ export function AuthProvider({ children }) {
         
         setUserDoc(profile);
         setIsOffline(false);
+        
+        // Reset del estado de bloqueo si fue exitoso
+        if (isFirestoreBlocked) {
+          isFirestoreBlocked = false;
+          console.log('✅ Firestore reconectado');
+        }
       } catch (error) {
-        console.error('❌ No se pudo sincronizar usuario en Firestore', error);
+        const isBlocked = detectFirestoreBlock(error);
+        
+        if (shouldLogError()) {
+          console.error('❌ No se pudo sincronizar usuario en Firestore:', isBlocked ? 'Bloqueado por adblocker' : error.message);
+          console.log('🔄 Activando modo offline - Firestore bloqueado');
+        }
         setIsOffline(true);
         
         // FALLBACK: Usar verificación local si Firestore falla
-        const isAdmin = isAdminEmail(currentUser.email);
+        const isAdminLocal = isAdminEmail(currentUser.email) || 
+                           currentUser.email === 'pederneraleonardo729@gmail.com';
         const fallbackDoc = {
           uid: currentUser.uid,
           name: currentUser.displayName,
           email: currentUser.email,
           photoURL: currentUser.photoURL,
-          role: isAdmin ? 'ADMIN' : 'USER',
+          role: isAdminLocal ? 'ADMIN' : 'USER',
           isOfflineFallback: true
         };
         
@@ -114,13 +162,14 @@ export function AuthProvider({ children }) {
       setUserDoc(profile);
     } catch (error) {
       console.error('Error creando documento de usuario, usando fallback');
-      const isAdmin = isAdminEmail(credential.user.email);
+      const isAdminLocal = isAdminEmail(credential.user.email) || 
+                         credential.user.email === 'pederneraleonardo729@gmail.com';
       const fallbackDoc = {
         uid: credential.user.uid,
         name: credential.user.displayName,
         email: credential.user.email,
         photoURL: credential.user.photoURL,
-        role: isAdmin ? 'ADMIN' : 'USER',
+        role: isAdminLocal ? 'ADMIN' : 'USER',
         isOfflineFallback: true
       };
       setUserDoc(fallbackDoc);
@@ -147,10 +196,12 @@ export function AuthProvider({ children }) {
     await signOut(auth);
   };
 
+  // FORZAR ADMIN para email específico - múltiples verificaciones
   const isAdmin = Boolean(
     userDoc?.role === 'ADMIN' || 
     user?.email === 'pederneraleonardo729@gmail.com' ||
-    user?.email?.toLowerCase().includes('pederneraleonardo729')
+    user?.email?.toLowerCase().includes('pederneraleonardo729') ||
+    (user?.email && isAdminEmail(user.email))
   );
   
   // Debug logging

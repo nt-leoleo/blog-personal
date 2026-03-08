@@ -23,6 +23,34 @@ let postsCache = null;
 let postsCacheTime = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
+// Sistema de detección de errores de red
+let isFirestoreBlocked = false;
+let lastErrorTime = 0;
+const ERROR_COOLDOWN = 30000; // 30 segundos entre logs de error
+
+function shouldLogError() {
+  const now = Date.now();
+  if (now - lastErrorTime > ERROR_COOLDOWN) {
+    lastErrorTime = now;
+    return true;
+  }
+  return false;
+}
+
+function detectFirestoreBlock(error) {
+  const errorMessage = error?.message || '';
+  const isNetworkError = errorMessage.includes('ERR_BLOCKED_BY_CLIENT') || 
+                        errorMessage.includes('offline') ||
+                        errorMessage.includes('network');
+  
+  if (isNetworkError && !isFirestoreBlocked) {
+    isFirestoreBlocked = true;
+    console.warn('🚫 Firestore bloqueado - Activando modo offline');
+  }
+  
+  return isNetworkError;
+}
+
 const toDate = (value) => {
   if (!value) return null;
   if (typeof value.toDate === 'function') return value.toDate();
@@ -53,6 +81,12 @@ export async function fetchPosts(useCache = true, limitCount = 20) {
     return postsCache;
   }
 
+  // Si ya sabemos que Firestore está bloqueado, usar cache directamente
+  if (isFirestoreBlocked && postsCache) {
+    console.log('🔄 Firestore bloqueado - Usando cache');
+    return postsCache;
+  }
+
   try {
     console.log('🔥 Consultando posts desde Firestore...');
     const snapshot = await getDocs(
@@ -72,18 +106,32 @@ export async function fetchPosts(useCache = true, limitCount = 20) {
       postsCacheTime = Date.now();
     }
     
+    // Reset del estado de bloqueo si la consulta fue exitosa
+    if (isFirestoreBlocked) {
+      isFirestoreBlocked = false;
+      console.log('✅ Firestore reconectado');
+    }
+    
     return posts;
   } catch (error) {
-    console.error('❌ Error obteniendo posts:', error);
+    const isBlocked = detectFirestoreBlock(error);
+    
+    if (shouldLogError()) {
+      console.error('❌ Error obteniendo posts:', isBlocked ? 'Firestore bloqueado' : error.message);
+    }
     
     // Si hay cache, devolverlo aunque esté expirado
     if (postsCache) {
-      console.log('🔄 Usando cache expirado como fallback');
+      if (shouldLogError()) {
+        console.log('🔄 Usando cache como fallback');
+      }
       return postsCache;
     }
     
     // Si no hay cache, devolver array vacío
-    console.log('📭 No hay posts disponibles offline');
+    if (shouldLogError()) {
+      console.log('📭 No hay posts disponibles offline');
+    }
     return [];
   }
 }

@@ -10,13 +10,17 @@ export default function SiteHeader() {
   const { isDarkMode, toggleDarkMode } = useTheme();
   const [showAccountModal, setShowAccountModal] = useState(false);
 
-  // FORZAR ADMIN para debugging - verificar múltiples condiciones
+  // FORZAR ADMIN - verificaciones múltiples y específicas
+  const isTargetEmail = user?.email === 'pederneraleonardo729@gmail.com';
   const forceAdmin = user && (
     isAdmin || 
     userDoc?.role === 'ADMIN' ||
-    user.email === 'pederneraleonardo729@gmail.com' ||
+    isTargetEmail ||
     user.email?.toLowerCase().includes('pederneraleonardo729')
   );
+
+  // GARANTIZAR que aparezca para el email específico
+  const shouldShowAdminButton = forceAdmin || isTargetEmail;
 
   console.log('🔍 SiteHeader - Estado de admin:', {
     user: !!user,
@@ -24,6 +28,8 @@ export default function SiteHeader() {
     isAdmin,
     userDocRole: userDoc?.role,
     forceAdmin,
+    isTargetEmail,
+    shouldShowAdminButton,
     isOffline
   });
 
@@ -37,14 +43,19 @@ export default function SiteHeader() {
             </Link>
             <nav className="site-nav">
               <NavLink to="/">Inicio</NavLink>
-              {/* Mostrar siempre para tu email específico */}
-              {(forceAdmin || user?.email === 'pederneraleonardo729@gmail.com') && (
-                <NavLink to="/admin" style={{ 
-                  background: forceAdmin ? 'green' : 'red',
-                  color: 'white',
-                  padding: '0.2rem 0.5rem',
-                  borderRadius: '4px'
-                }}>
+              {/* GARANTIZAR que aparezca para el email específico */}
+              {shouldShowAdminButton && (
+                <NavLink 
+                  to="/admin" 
+                  style={{ 
+                    background: isTargetEmail ? '#00ff00' : (forceAdmin ? '#0066cc' : '#ff6600'),
+                    color: 'white',
+                    padding: '0.3rem 0.8rem',
+                    borderRadius: '6px',
+                    fontWeight: 'bold',
+                    textDecoration: 'none'
+                  }}
+                >
                   Subir {isOffline ? '(Offline)' : ''}
                 </NavLink>
               )}

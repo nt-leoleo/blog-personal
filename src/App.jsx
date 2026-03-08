@@ -1,8 +1,10 @@
 ﻿import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import SiteHeader from './components/SiteHeader';
 import NotificationModal from './components/NotificationModal';
+import FirestoreBlockedModal from './components/FirestoreBlockedModal';
 import DebugAuth from './components/DebugAuth';
 import { useAuth } from './contexts/AuthContext';
+import { useFirestoreConnection } from './hooks/useFirestoreConnection';
 import AdminPage from './pages/AdminPage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -31,10 +33,13 @@ function ProtectedRoute({ children, requireAdmin = false }) {
 }
 
 export default function App() {
+  const { isBlocked, retry } = useFirestoreConnection();
+
   return (
     <div className="app-shell">
       <SiteHeader />
       <NotificationModal />
+      <FirestoreBlockedModal isBlocked={isBlocked} onRetry={retry} />
       <DebugAuth />
       <main className="app-main">
         <Routes>
