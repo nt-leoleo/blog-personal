@@ -1,7 +1,7 @@
 import { useAuth } from '../contexts/AuthContext';
 
 export default function DebugAuth() {
-  const { user, userDoc, loading, isAdmin } = useAuth();
+  const { user, userDoc, loading, isAdmin, isOffline } = useAuth();
 
   // Solo mostrar en desarrollo
   if (import.meta.env.PROD) return null;
@@ -26,6 +26,8 @@ export default function DebugAuth() {
       <p><strong>UserDoc:</strong> {userDoc ? 'Existe' : 'No existe'}</p>
       <p><strong>Role:</strong> {userDoc?.role || 'N/A'}</p>
       <p><strong>IsAdmin:</strong> {isAdmin ? 'SÍ' : 'NO'}</p>
+      <p><strong>IsOffline:</strong> {isOffline ? 'SÍ' : 'NO'}</p>
+      <p><strong>Fallback:</strong> {userDoc?.isOfflineFallback ? 'SÍ' : 'NO'}</p>
       <p><strong>DisplayName:</strong> {user?.displayName || 'N/A'}</p>
     </div>
   );

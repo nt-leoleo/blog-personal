@@ -1226,3 +1226,67 @@ html {
   background: #1a1a2a;
   color: #64748b;
 }
+/* Estilos para modo offline */
+.offline-notice {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.dark-mode .offline-notice {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+.offline-badge {
+  background: #f59e0b;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Mejorar indicadores de carga */
+.state-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--ink-1);
+}
+
+.state-message::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--line);
+  border-top: 2px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Mejorar mensajes de error */
+.state-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  color: #dc2626;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  text-align: center;
+}
+
+.dark-mode .state-error {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #f87171;
+}

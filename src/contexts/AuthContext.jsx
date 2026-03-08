@@ -8,7 +8,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { auth, googleProvider } from '../lib/firebase';
-import { ensureUserDocument } from '../lib/users';
+import { ensureUserDocument, isAdminEmail } from '../lib/users';
 
 const AuthContext = createContext(null);
 
@@ -19,6 +19,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [userDoc, setUserDoc] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -59,8 +60,30 @@ export function AuthProvider({ children }) {
         });
         
         setUserDoc(profile);
+        setIsOffline(false);
       } catch (error) {
         console.error('❌ No se pudo sincronizar usuario en Firestore', error);
+        setIsOffline(true);
+        
+        // FALLBACK: Usar verificación local si Firestore falla
+        const isAdmin = isAdminEmail(currentUser.email);
+        const fallbackDoc = {
+          uid: currentUser.uid,
+          name: currentUser.displayName,
+          email: currentUser.email,
+          photoURL: currentUser.photoURL,
+          role: isAdmin ? 'ADMIN' : 'USER',
+          isOfflineFallback: true
+        };
+        
+        console.log('🔄 Usando fallback offline:', fallbackDoc);
+        setUserDoc(fallbackDoc);
+        
+        // Actualizar cache con fallback
+        userDocCache.set(currentUser.uid, {
+          data: fallbackDoc,
+          timestamp: Date.now()
+        });
       } finally {
         setLoading(false);
       }
@@ -76,18 +99,33 @@ export function AuthProvider({ children }) {
       await updateProfile(credential.user, { displayName: name.trim() });
     }
 
-    const profile = await ensureUserDocument({
-      ...credential.user,
-      displayName: name?.trim() || credential.user.displayName
-    });
+    try {
+      const profile = await ensureUserDocument({
+        ...credential.user,
+        displayName: name?.trim() || credential.user.displayName
+      });
 
-    // Actualizar cache
-    userDocCache.set(credential.user.uid, {
-      data: profile,
-      timestamp: Date.now()
-    });
+      // Actualizar cache
+      userDocCache.set(credential.user.uid, {
+        data: profile,
+        timestamp: Date.now()
+      });
 
-    setUserDoc(profile);
+      setUserDoc(profile);
+    } catch (error) {
+      console.error('Error creando documento de usuario, usando fallback');
+      const isAdmin = isAdminEmail(credential.user.email);
+      const fallbackDoc = {
+        uid: credential.user.uid,
+        name: credential.user.displayName,
+        email: credential.user.email,
+        photoURL: credential.user.photoURL,
+        role: isAdmin ? 'ADMIN' : 'USER',
+        isOfflineFallback: true
+      };
+      setUserDoc(fallbackDoc);
+    }
+
     return credential.user;
   };
 
@@ -117,10 +155,12 @@ export function AuthProvider({ children }) {
       console.log('🎯 Estado final de admin:', {
         email: user.email,
         role: userDoc.role,
-        isAdmin: isAdmin
+        isAdmin: isAdmin,
+        isOffline: isOffline,
+        isFallback: userDoc.isOfflineFallback
       });
     }
-  }, [user, userDoc, isAdmin]);
+  }, [user, userDoc, isAdmin, isOffline]);
 
   const value = useMemo(
     () => ({
@@ -128,12 +168,13 @@ export function AuthProvider({ children }) {
       userDoc,
       loading,
       isAdmin,
+      isOffline,
       registerWithEmail,
       loginWithEmail,
       loginWithGoogle,
       logout
     }),
-    [user, userDoc, loading, isAdmin]
+    [user, userDoc, loading, isAdmin, isOffline]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

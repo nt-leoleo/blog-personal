@@ -49,26 +49,43 @@ export const formatPostFromDoc = (docSnapshot) => {
 export async function fetchPosts(useCache = true, limitCount = 20) {
   // Verificar cache
   if (useCache && postsCache && (Date.now() - postsCacheTime) < CACHE_DURATION) {
+    console.log('📦 Usando posts desde cache');
     return postsCache;
   }
 
-  const snapshot = await getDocs(
-    query(
-      postsCollection, 
-      orderBy('createdAt', 'desc'),
-      limit(limitCount)
-    )
-  );
-  
-  const posts = snapshot.docs.map(formatPostFromDoc);
-  
-  // Actualizar cache
-  if (useCache) {
-    postsCache = posts;
-    postsCacheTime = Date.now();
+  try {
+    console.log('🔥 Consultando posts desde Firestore...');
+    const snapshot = await getDocs(
+      query(
+        postsCollection, 
+        orderBy('createdAt', 'desc'),
+        limit(limitCount)
+      )
+    );
+    
+    const posts = snapshot.docs.map(formatPostFromDoc);
+    console.log('✅ Posts obtenidos:', posts.length);
+    
+    // Actualizar cache
+    if (useCache) {
+      postsCache = posts;
+      postsCacheTime = Date.now();
+    }
+    
+    return posts;
+  } catch (error) {
+    console.error('❌ Error obteniendo posts:', error);
+    
+    // Si hay cache, devolverlo aunque esté expirado
+    if (postsCache) {
+      console.log('🔄 Usando cache expirado como fallback');
+      return postsCache;
+    }
+    
+    // Si no hay cache, devolver array vacío
+    console.log('📭 No hay posts disponibles offline');
+    return [];
   }
-  
-  return posts;
 }
 
 // Invalidar cache cuando se crea un post

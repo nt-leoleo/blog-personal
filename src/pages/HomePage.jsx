@@ -2,6 +2,7 @@
 import { Link } from 'react-router-dom';
 import { fetchPosts } from '../lib/blog';
 import { formatDate } from '../lib/format';
+import { useAuth } from '../contexts/AuthContext';
 
 function mediaLabel(mimeType) {
   if (!mimeType) return null;
@@ -14,20 +15,28 @@ export default function HomePage() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { isOffline } = useAuth();
 
   const loadPosts = useCallback(async () => {
     try {
       setLoading(true);
+      setError('');
+      console.log('🏠 Cargando posts en HomePage...');
+      
       // Cargar solo los primeros 10 posts para mejorar rendimiento
       const data = await fetchPosts(true, 10);
       setPosts(data);
+      
+      if (data.length === 0 && !isOffline) {
+        setError('No hay publicaciones disponibles.');
+      }
     } catch (err) {
-      console.error(err);
-      setError('No se pudieron cargar las publicaciones.');
+      console.error('❌ Error cargando posts:', err);
+      setError('No se pudieron cargar las publicaciones. Verifica tu conexión.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isOffline]);
 
   useEffect(() => {
     loadPosts();
@@ -39,18 +48,38 @@ export default function HomePage() {
         <p className="eyebrow">BLOG PERSONAL 143</p>
         <h1>Aca subo mis webadas</h1>
         <p>Para comentar tenés que entrar con tu cuenta de Google o correo, wachín.</p>
+        {isOffline && (
+          <div className="offline-notice">
+            ⚠️ Modo offline - Algunas funciones pueden estar limitadas
+          </div>
+        )}
       </section>
 
       <section className="stack-md">
         <div className="row-between">
           <h2>Publicaciones recientes</h2>
+          {isOffline && <span className="offline-badge">Offline</span>}
         </div>
 
         {loading && <p className="state-message">Cargando publicaciones...</p>}
-        {error && <p className="state-error">{error}</p>}
+        {error && (
+          <div className="state-error">
+            {error}
+            {isOffline && (
+              <div style={{ marginTop: '0.5rem', fontSize: '0.8rem' }}>
+                Intenta recargar la página cuando tengas conexión.
+              </div>
+            )}
+          </div>
+        )}
 
         {!loading && !error && posts.length === 0 && (
-          <div className="panel muted">Aun no hay posts. Cuando el admin publique, van a aparecer aca.</div>
+          <div className="panel muted">
+            {isOffline 
+              ? 'No hay posts disponibles offline. Conectate a internet para ver las publicaciones.'
+              : 'Aun no hay posts. Cuando el admin publique, van a aparecer aca.'
+            }
+          </div>
         )}
 
         {!loading && !error && posts.length > 0 && (
