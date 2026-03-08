@@ -36,7 +36,8 @@ export default function LoginPage() {
 
     try {
       await loginWithEmail({ email, password });
-      navigate('/'); // Siempre redirigir al inicio después del login
+      // Usar la URL de callback si existe, sino quedarse en la página actual
+      navigate(callbackUrl);
     } catch (err) {
       setError(mapAuthError(err));
     } finally {
@@ -50,7 +51,8 @@ export default function LoginPage() {
 
     try {
       await loginWithGoogle();
-      navigate('/'); // Siempre redirigir al inicio después del login
+      // Usar la URL de callback si existe, sino quedarse en la página actual
+      navigate(callbackUrl);
     } catch {
       setError('No se pudo iniciar sesion con Google.');
     } finally {

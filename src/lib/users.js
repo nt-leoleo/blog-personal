@@ -30,13 +30,20 @@ export async function isEmailAdmin(email = '') {
   const normalized = normalizeEmail(email);
   if (!normalized) return false;
 
+  // Verificar primero en las variables de entorno
   if (isAdminEmail(normalized)) {
     return true;
   }
 
-  const adminRef = doc(db, 'adminEmails', normalized);
-  const snapshot = await getDoc(adminRef);
-  return snapshot.exists();
+  // Verificar en la base de datos
+  try {
+    const adminRef = doc(db, 'adminEmails', normalized);
+    const snapshot = await getDoc(adminRef);
+    return snapshot.exists();
+  } catch (error) {
+    console.error('Error verificando admin en Firestore:', error);
+    return false;
+  }
 }
 
 export async function fetchAdminEmails() {
@@ -71,6 +78,7 @@ export async function ensureUserDocument(user) {
   const userRef = doc(db, 'users', user.uid);
   const snapshot = await getDoc(userRef);
 
+  // Verificar si el usuario es admin basado en su email
   const role = (await isEmailAdmin(user.email)) ? 'ADMIN' : 'USER';
 
   const payload = {
@@ -91,12 +99,12 @@ export async function ensureUserDocument(user) {
     return { ...payload, createdAt: new Date() };
   }
 
+  // Actualizar el rol cada vez que el usuario inicia sesión
   await setDoc(userRef, payload, { merge: true });
-  const data = snapshot.data();
+  
   return {
-    ...data,
     ...payload,
-    role: data?.role || payload.role
+    createdAt: snapshot.data()?.createdAt || new Date()
   };
 }
 

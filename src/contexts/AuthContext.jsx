@@ -8,7 +8,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { auth, googleProvider } from '../lib/firebase';
-import { ensureUserDocument, getRoleFromUserDoc, isAdminEmail } from '../lib/users';
+import { ensureUserDocument, isEmailAdmin } from '../lib/users';
 
 const AuthContext = createContext(null);
 
@@ -59,8 +59,9 @@ export function AuthProvider({ children }) {
 
   const loginWithEmail = async ({ email, password }) => {
     const credential = await signInWithEmailAndPassword(auth, email, password);
-    const role = await getRoleFromUserDoc(credential.user.uid);
-    setUserDoc((prev) => ({ ...prev, role }));
+    // El rol se actualizará automáticamente en ensureUserDocument
+    const profile = await ensureUserDocument(credential.user);
+    setUserDoc(profile);
     return credential.user;
   };
 
@@ -75,7 +76,7 @@ export function AuthProvider({ children }) {
     await signOut(auth);
   };
 
-  const isAdmin = Boolean(userDoc?.role === 'ADMIN' || isAdminEmail(user?.email || ''));
+  const isAdmin = Boolean(userDoc?.role === 'ADMIN');
 
   const value = useMemo(
     () => ({
