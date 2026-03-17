@@ -2,7 +2,6 @@
 import SiteHeader from './components/SiteHeader';
 import NotificationModal from './components/NotificationModal';
 import FirestoreBlockedModal from './components/FirestoreBlockedModal';
-import DebugAuth from './components/DebugAuth';
 import { useAuth } from './contexts/AuthContext';
 import { useFirestoreConnection } from './hooks/useFirestoreConnection';
 import AdminPage from './pages/AdminPage';
@@ -44,7 +43,6 @@ export default function App() {
         onRetry={retry} 
         consecutiveFailures={consecutiveFailures}
       />
-      <DebugAuth />
       <main className="app-main">
         <Routes>
           <Route path="/" element={<HomePage />} />
