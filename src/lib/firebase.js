@@ -34,14 +34,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
+
+// Configurar Auth para no mantener estado persistente innecesario
+auth.settings.appVerificationDisabledForTesting = false;
+
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({ prompt: 'select_account' });
+googleProvider.setCustomParameters({ 
+  prompt: 'select_account'
+});
 
 // Inicializar Firestore con configuración optimizada
-// Usar long polling para evitar problemas con WebSocket/extensiones
+// Desactivar listeners en tiempo real para reducir conexiones
 export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true, // Usar long polling para mejor compatibilidad
+  experimentalForceLongPolling: false, // Desactivar long polling
+  experimentalAutoDetectLongPolling: false, // No detectar automáticamente
   cacheSizeBytes: 40000000, // 40MB de cache local
 });
 

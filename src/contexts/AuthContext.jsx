@@ -53,91 +53,111 @@ export function AuthProvider({ children }) {
   const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      // console.log('🔐 Estado de autenticación cambió:', currentUser?.email || 'No logueado');
-      
-      if (!currentUser) {
-        setUser(null);
-        setUserDoc(null);
-        setLoading(false);
-        return;
-      }
+    let unsubscribe;
+    let mounted = true;
+    
+    // Usar un timeout para evitar múltiples llamadas rápidas
+    const timeoutId = setTimeout(() => {
+      unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+        if (!mounted) return;
+        
+        // console.log('🔐 Estado de autenticación cambió:', currentUser?.email || 'No logueado');
+        
+        if (!currentUser) {
+          setUser(null);
+          setUserDoc(null);
+          setLoading(false);
+          return;
+        }
 
-      setUser(currentUser);
+        setUser(currentUser);
 
-      try {
-        // Verificar cache primero
-        const cacheKey = currentUser.uid;
-        if (userDocCache.has(cacheKey)) {
-          const cachedDoc = userDocCache.get(cacheKey);
-          // Cache válido por 10 minutos
-          if (Date.now() - cachedDoc.timestamp < 10 * 60 * 1000) {
-            // console.log('📦 Usando documento de usuario desde cache');
-            setUserDoc(cachedDoc.data);
+        try {
+          // Verificar cache primero
+          const cacheKey = currentUser.uid;
+          if (userDocCache.has(cacheKey)) {
+            const cachedDoc = userDocCache.get(cacheKey);
+            // Cache válido por 10 minutos
+            if (Date.now() - cachedDoc.timestamp < 10 * 60 * 1000) {
+              // console.log('📦 Usando documento de usuario desde cache');
+              setUserDoc(cachedDoc.data);
+              setLoading(false);
+              return;
+            }
+          }
+
+          // Si ya sabemos que Firestore está bloqueado, usar fallback directamente
+          if (isFirestoreBlocked) {
+            throw new Error('Firestore bloqueado - usando fallback');
+          }
+
+          // console.log('🔄 Obteniendo documento de usuario desde Firestore');
+          const profile = await ensureUserDocument(currentUser);
+          
+          if (!mounted) return;
+          
+          // console.log('✅ Documento de usuario obtenido:', profile);
+          
+          // Actualizar cache
+          userDocCache.set(cacheKey, {
+            data: profile,
+            timestamp: Date.now()
+          });
+          
+          setUserDoc(profile);
+          setIsOffline(false);
+          
+          // Reset del estado de bloqueo si fue exitoso
+          if (isFirestoreBlocked) {
+            isFirestoreBlocked = false;
+            // console.log('✅ Firestore reconectado');
+          }
+        } catch (error) {
+          if (!mounted) return;
+          
+          const isBlocked = detectFirestoreBlock(error);
+          
+          if (shouldLogError()) {
+            // console.error('❌ No se pudo sincronizar usuario en Firestore:', isBlocked ? 'Bloqueado por adblocker' : error.message);
+            // console.log('🔄 Activando modo offline - Firestore bloqueado');
+          }
+          setIsOffline(true);
+          
+          // FALLBACK: Usar verificación local si Firestore falla
+          const isAdminLocal = isAdminEmail(currentUser.email) || 
+                             currentUser.email === 'pederneraleonardo729@gmail.com';
+          const fallbackDoc = {
+            uid: currentUser.uid,
+            name: currentUser.displayName,
+            email: currentUser.email,
+            photoURL: currentUser.photoURL,
+            role: isAdminLocal ? 'ADMIN' : 'USER',
+            isOfflineFallback: true
+          };
+          
+          // console.log('🔄 Usando fallback offline:', fallbackDoc);
+          setUserDoc(fallbackDoc);
+          
+          // Actualizar cache con fallback
+          userDocCache.set(currentUser.uid, {
+            data: fallbackDoc,
+            timestamp: Date.now()
+          });
+        } finally {
+          if (mounted) {
             setLoading(false);
-            return;
           }
         }
+      });
+    }, 100); // Delay de 100ms para evitar múltiples llamadas
 
-        // Si ya sabemos que Firestore está bloqueado, usar fallback directamente
-        if (isFirestoreBlocked) {
-          throw new Error('Firestore bloqueado - usando fallback');
-        }
-
-        // console.log('🔄 Obteniendo documento de usuario desde Firestore');
-        const profile = await ensureUserDocument(currentUser);
-        
-        // console.log('✅ Documento de usuario obtenido:', profile);
-        
-        // Actualizar cache
-        userDocCache.set(cacheKey, {
-          data: profile,
-          timestamp: Date.now()
-        });
-        
-        setUserDoc(profile);
-        setIsOffline(false);
-        
-        // Reset del estado de bloqueo si fue exitoso
-        if (isFirestoreBlocked) {
-          isFirestoreBlocked = false;
-          // console.log('✅ Firestore reconectado');
-        }
-      } catch (error) {
-        const isBlocked = detectFirestoreBlock(error);
-        
-        if (shouldLogError()) {
-          // console.error('❌ No se pudo sincronizar usuario en Firestore:', isBlocked ? 'Bloqueado por adblocker' : error.message);
-          // console.log('🔄 Activando modo offline - Firestore bloqueado');
-        }
-        setIsOffline(true);
-        
-        // FALLBACK: Usar verificación local si Firestore falla
-        const isAdminLocal = isAdminEmail(currentUser.email) || 
-                           currentUser.email === 'pederneraleonardo729@gmail.com';
-        const fallbackDoc = {
-          uid: currentUser.uid,
-          name: currentUser.displayName,
-          email: currentUser.email,
-          photoURL: currentUser.photoURL,
-          role: isAdminLocal ? 'ADMIN' : 'USER',
-          isOfflineFallback: true
-        };
-        
-        // console.log('🔄 Usando fallback offline:', fallbackDoc);
-        setUserDoc(fallbackDoc);
-        
-        // Actualizar cache con fallback
-        userDocCache.set(currentUser.uid, {
-          data: fallbackDoc,
-          timestamp: Date.now()
-        });
-      } finally {
-        setLoading(false);
+    return () => {
+      mounted = false;
+      clearTimeout(timeoutId);
+      if (unsubscribe) {
+        unsubscribe();
       }
-    });
-
-    return unsubscribe;
+    };
   }, []);
 
   const registerWithEmail = async ({ name, email, password }) => {
