@@ -1,23 +1,23 @@
 ﻿:root {
-  --bg-0: #fdfcf9;
-  --bg-1: #eef6ff;
-  --ink-0: #111217;
-  --ink-1: #2f3542;
-  --line: #d9dee8;
-  --primary: #101828;
-  --primary-hover: #1f2937;
-  --panel: rgba(255, 255, 255, 0.88);
+  --bg: #ffffff;
+  --bg-secondary: #f9f9f9;
+  --text: #0f0f0f;
+  --text-secondary: #606060;
+  --border: #e5e5e5;
+  --hover: #f2f2f2;
+  --primary: #065fd4;
+  --primary-hover: #0553c2;
 }
 
 :root.dark-mode {
-  --bg-0: #0a0a0f;
-  --bg-1: #151520;
-  --ink-0: #f8fafc;
-  --ink-1: #e2e8f0;
-  --line: #334155;
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --panel: rgba(30, 30, 46, 0.95);
+  --bg: #0f0f0f;
+  --bg-secondary: #212121;
+  --text: #f1f1f1;
+  --text-secondary: #aaaaaa;
+  --border: #3f3f3f;
+  --hover: #272727;
+  --primary: #3ea6ff;
+  --primary-hover: #65b8ff;
 }
 
 * {
@@ -32,12 +32,10 @@ body,
 
 body {
   margin: 0;
-  color: var(--ink-0);
-  font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, sans-serif;
-  background:
-    radial-gradient(circle at 8% -10%, #d6efe4 0%, transparent 42%),
-    radial-gradient(circle at 90% 0%, #dbe6ff 0%, transparent 36%),
-    linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 100%);
+  color: var(--text);
+  font-family: 'Roboto', 'Arial', sans-serif;
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
@@ -48,17 +46,21 @@ a {
 h1,
 h2,
 h3 {
-  font-family: 'Newsreader', Georgia, serif;
-  letter-spacing: -0.01em;
+  font-weight: 500;
   margin: 0;
+  color: var(--text);
 }
 
 h1 {
-  font-size: clamp(2rem, 5vw, 3rem);
+  font-size: 2rem;
 }
 
 h2 {
-  font-size: clamp(1.4rem, 3.5vw, 2rem);
+  font-size: 1.4rem;
+}
+
+h3 {
+  font-size: 1.1rem;
 }
 
 .app-shell {
@@ -68,20 +70,21 @@ h2 {
 .site-header {
   position: sticky;
   top: 0;
-  z-index: 40;
-  border-bottom: 1px solid rgba(217, 222, 232, 0.7);
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
+  z-index: 100;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  height: 56px;
 }
 
 .site-header__inner {
   margin: 0 auto;
-  max-width: 1100px;
-  padding: 1rem 1.2rem;
+  max-width: 1280px;
+  height: 100%;
+  padding: 0 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 16px;
 }
 
 .site-header__left {
