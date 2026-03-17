@@ -39,8 +39,9 @@ export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 // Inicializar Firestore con configuración optimizada
+// Usar long polling para evitar problemas con WebSocket/extensiones
 export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: false, // Usar WebSocket en lugar de long polling
+  experimentalForceLongPolling: true, // Usar long polling para mejor compatibilidad
   cacheSizeBytes: 40000000, // 40MB de cache local
 });
 
