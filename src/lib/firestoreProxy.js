@@ -23,11 +23,11 @@ const localCache = {
   }
 };
 
-// Configuración optimizada
-const CACHE_DURATION = 3 * 60 * 1000; // 3 minutos (reducido)
-const RETRY_ATTEMPTS = 2; // Reducido de 3 a 2
-const RETRY_DELAY = 500; // Reducido de 1000 a 500ms
-const OPERATION_TIMEOUT = 8000; // 8 segundos máximo por operación
+// Configuración optimizada para velocidad
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos - cache más largo
+const RETRY_ATTEMPTS = 1; // Solo 1 reintento
+const RETRY_DELAY = 300; // 300ms
+const OPERATION_TIMEOUT = 5000; // 5 segundos máximo
 
 // Cargar cache desde localStorage al iniciar
 function loadCacheFromStorage() {
@@ -79,14 +79,12 @@ async function retryOperation(operation, attempts = RETRY_ATTEMPTS) {
       const result = await Promise.race([operation(), timeoutPromise]);
       return result;
     } catch (error) {
-      await handleFirestoreError(error);
-      
       if (i === attempts - 1) {
         throw error;
       }
       
-      // Backoff exponencial más agresivo
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * Math.pow(1.5, i)));
+      // Delay mínimo antes de reintentar
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
     }
   }
 }
@@ -104,13 +102,8 @@ async function cachedRead(cacheKey, operation, cacheDuration = CACHE_DURATION) {
   }
   
   try {
-    // Optimizar conexión antes de la operación
-    await optimizeFirestoreConnection();
-    
     // console.log(`🔄 Consultando ${cacheKey} desde Firestore...`);
-    const startTime = Date.now();
     const result = await retryOperation(operation);
-    const duration = Date.now() - startTime;
     
     // Actualizar cache
     localCache[cacheKey].clear();
@@ -119,10 +112,10 @@ async function cachedRead(cacheKey, operation, cacheDuration = CACHE_DURATION) {
     });
     localCache.lastUpdate[cacheKey] = now;
     
-    // Guardar en localStorage
-    saveCacheToStorage();
+    // Guardar en localStorage de forma asíncrona
+    setTimeout(() => saveCacheToStorage(), 0);
     
-    // console.log(`✅ ${cacheKey} obtenidos y cacheados: ${result.length} items en ${duration}ms`);
+    // console.log(`✅ ${cacheKey} obtenidos y cacheados: ${result.length} items`);
     return result;
     
   } catch (error) {
@@ -143,7 +136,7 @@ async function cachedRead(cacheKey, operation, cacheDuration = CACHE_DURATION) {
 // API pública
 export const firestoreProxy = {
   // Obtener posts con límite optimizado
-  async getPosts(limitCount = 10) { // Reducido de 20 a 10
+  async getPosts(limitCount = 10) {
     return cachedRead('posts', async () => {
       const snapshot = await getDocs(
         query(
@@ -153,17 +146,39 @@ export const firestoreProxy = {
         )
       );
       
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate?.() || new Date(doc.data().createdAt),
-        updatedAt: doc.data().updatedAt?.toDate?.() || new Date(doc.data().updatedAt)
-      }));
+      // Mapeo más eficiente
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          slug: data.slug,
+          title: data.title,
+          content: data.content,
+          authorName: data.authorName,
+          authorId: data.authorId,
+          authorEmail: data.authorEmail,
+          media: data.media || [],
+          mediaCount: data.mediaCount || 0,
+          commentsCount: data.commentsCount || 0,
+          createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
+          updatedAt: data.updatedAt?.toDate?.() || new Date(data.updatedAt)
+        };
+      });
     });
   },
 
   // Obtener post por slug con cache local
   async getPostBySlug(slug) {
+    // Primero buscar en cache
+    const cachedPosts = Array.from(localCache.posts.values());
+    const cachedPost = cachedPosts.find(post => post.slug === slug);
+    
+    if (cachedPost) {
+      // console.log('📦 Post encontrado en cache local');
+      return cachedPost;
+    }
+    
+    // Si no está en cache, consultar Firestore
     try {
       return await retryOperation(async () => {
         const snapshot = await getDocs(
@@ -173,25 +188,30 @@ export const firestoreProxy = {
         if (snapshot.empty) return null;
         
         const doc = snapshot.docs[0];
-        return {
+        const data = doc.data();
+        const post = {
           id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate?.() || new Date(doc.data().createdAt),
-          updatedAt: doc.data().updatedAt?.toDate?.() || new Date(doc.data().updatedAt)
+          slug: data.slug,
+          title: data.title,
+          content: data.content,
+          authorName: data.authorName,
+          authorId: data.authorId,
+          authorEmail: data.authorEmail,
+          media: data.media || [],
+          mediaCount: data.mediaCount || 0,
+          commentsCount: data.commentsCount || 0,
+          createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
+          updatedAt: data.updatedAt?.toDate?.() || new Date(data.updatedAt)
         };
+        
+        // Guardar en cache
+        localCache.posts.set(post.id, post);
+        saveCacheToStorage();
+        
+        return post;
       });
     } catch (error) {
       // console.error('Error obteniendo post por slug:', error.message);
-      
-      // Buscar en cache local
-      const cachedPosts = Array.from(localCache.posts.values());
-      const cachedPost = cachedPosts.find(post => post.slug === slug);
-      
-      if (cachedPost) {
-        // console.log('📦 Post encontrado en cache local');
-        return cachedPost;
-      }
-      
       return null;
     }
   },

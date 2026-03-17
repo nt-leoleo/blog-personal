@@ -65,8 +65,8 @@ export default function AdminPage() {
   const loadPosts = useCallback(async () => {
     try {
       setLoadingPosts(true);
-      // Usar cache y limitar a 15 posts para admin
-      const data = await fetchPosts(true, 15);
+      // Usar cache y limitar a 10 posts para admin
+      const data = await fetchPosts(true, 10);
       setPosts(data);
     } catch (error) {
       // console.error(error);

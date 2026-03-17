@@ -86,11 +86,11 @@ async function buildUniqueSlug(title) {
 }
 
 async function uploadMediaFiles(slug, files) {
-  const uploads = [];
-
-  for (let index = 0; index < files.length; index += 1) {
-    const file = files[index];
-    if (!file || file.size === 0) continue;
+  if (!files || files.length === 0) return [];
+  
+  // Subir archivos en paralelo para mayor velocidad
+  const uploadPromises = files.map(async (file, index) => {
+    if (!file || file.size === 0) return null;
 
     try {
       const safeName = file.name.replace(/\s+/g, '-');
@@ -99,26 +99,29 @@ async function uploadMediaFiles(slug, files) {
       const uploaded = await uploadBytes(storageRef, file);
       const url = await getDownloadURL(uploaded.ref);
 
-      uploads.push({
+      return {
         url,
         path: storagePath,
         fileName: file.name,
         mimeType: file.type || 'application/octet-stream',
         size: file.size
-      });
+      };
     } catch (error) {
       // console.error('Error subiendo archivo:', error);
-      // Continuar con otros archivos
+      return null;
     }
-  }
+  });
 
-  return uploads;
+  const results = await Promise.all(uploadPromises);
+  return results.filter(Boolean); // Filtrar nulls
 }
 
 export async function createPost({ title, content, files, user }) {
   try {
     const slug = await buildUniqueSlug(title);
-    const media = await uploadMediaFiles(slug, files);
+    
+    // Subir archivos en paralelo para mayor velocidad
+    const media = files.length > 0 ? await uploadMediaFiles(slug, files) : [];
 
     const postData = {
       slug,

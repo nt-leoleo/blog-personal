@@ -23,8 +23,8 @@ export default function HomePage() {
       setError('');
       // console.log('🏠 Cargando posts en HomePage...');
       
-      // Cargar solo los primeros 10 posts para mejorar rendimiento
-      const data = await fetchPosts(true, 10);
+      // Cargar solo los primeros 8 posts para mejorar rendimiento
+      const data = await fetchPosts(true, 8);
       setPosts(data);
       
       if (data.length === 0 && !isOffline) {

@@ -129,7 +129,7 @@ export default function PostPage() {
               if (file.mimeType?.startsWith('image/')) {
                 return (
                   <figure key={file.url} className="media-card">
-                    <img src={file.url} alt={file.fileName} />
+                    <img src={file.url} alt={file.fileName} loading="lazy" />
                     <figcaption>{file.fileName}</figcaption>
                   </figure>
                 );
@@ -139,7 +139,7 @@ export default function PostPage() {
                 return (
                   <div key={file.url} className="media-card audio-card">
                     <p>{file.fileName}</p>
-                    <audio controls>
+                    <audio controls preload="metadata">
                       <source src={file.url} type={file.mimeType} />
                     </audio>
                   </div>
