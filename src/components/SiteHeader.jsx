@@ -23,15 +23,15 @@ export default function SiteHeader() {
   const shouldShowAdminButton = forceAdmin || isTargetEmail;
 
   // console.log('🔍 SiteHeader - Estado de admin:', {
-    user: !!user,
-    email: user?.email,
-    isAdmin,
-    userDocRole: userDoc?.role,
-    forceAdmin,
-    isTargetEmail,
-    shouldShowAdminButton,
-    isOffline
-  });
+  //   user: !!user,
+  //   email: user?.email,
+  //   isAdmin,
+  //   userDocRole: userDoc?.role,
+  //   forceAdmin,
+  //   isTargetEmail,
+  //   shouldShowAdminButton,
+  //   isOffline
+  // });
 
   return (
     <>

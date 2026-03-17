@@ -208,12 +208,12 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (user && userDoc) {
       // console.log('🎯 Estado final de admin:', {
-        email: user.email,
-        role: userDoc.role,
-        isAdmin: isAdmin,
-        isOffline: isOffline,
-        isFallback: userDoc.isOfflineFallback
-      });
+      //   email: user.email,
+      //   role: userDoc.role,
+      //   isAdmin: isAdmin,
+      //   isOffline: isOffline,
+      //   isFallback: userDoc.isOfflineFallback
+      // });
     }
   }, [user, userDoc, isAdmin, isOffline]);
 
