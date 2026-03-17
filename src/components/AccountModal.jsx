@@ -25,7 +25,7 @@ export default function AccountModal({ isOpen, onClose }) {
       setMessage('Perfil actualizado correctamente');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      console.error('Error al actualizar perfil:', error);
+      // console.error('Error al actualizar perfil:', error);
       setMessage('Error al actualizar el perfil');
     } finally {
       setSaving(false);

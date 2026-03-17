@@ -50,9 +50,9 @@ function loadCacheFromStorage() {
       localCache.lastUpdate = JSON.parse(savedTimestamps);
     }
     
-    console.log('📦 Cache cargado desde localStorage');
+    // console.log('📦 Cache cargado desde localStorage');
   } catch (error) {
-    console.warn('⚠️ Error cargando cache:', error.message);
+    // console.warn('⚠️ Error cargando cache:', error.message);
   }
 }
 
@@ -63,7 +63,7 @@ function saveCacheToStorage() {
     localStorage.setItem('firestore_cache_users', JSON.stringify(Array.from(localCache.users.values())));
     localStorage.setItem('firestore_cache_timestamps', JSON.stringify(localCache.lastUpdate));
   } catch (error) {
-    console.warn('⚠️ Error guardando cache:', error.message);
+    // console.warn('⚠️ Error guardando cache:', error.message);
   }
 }
 
@@ -99,7 +99,7 @@ async function cachedRead(cacheKey, operation, cacheDuration = CACHE_DURATION) {
   
   // Usar cache si está disponible y no ha expirado
   if (cached && cached.size > 0 && (now - lastUpdate) < cacheDuration) {
-    console.log(`📦 Usando ${cacheKey} desde cache (${cached.size} items)`);
+    // console.log(`📦 Usando ${cacheKey} desde cache (${cached.size} items)`);
     return Array.from(cached.values());
   }
   
@@ -107,7 +107,7 @@ async function cachedRead(cacheKey, operation, cacheDuration = CACHE_DURATION) {
     // Optimizar conexión antes de la operación
     await optimizeFirestoreConnection();
     
-    console.log(`🔄 Consultando ${cacheKey} desde Firestore...`);
+    // console.log(`🔄 Consultando ${cacheKey} desde Firestore...`);
     const startTime = Date.now();
     const result = await retryOperation(operation);
     const duration = Date.now() - startTime;
@@ -122,20 +122,20 @@ async function cachedRead(cacheKey, operation, cacheDuration = CACHE_DURATION) {
     // Guardar en localStorage
     saveCacheToStorage();
     
-    console.log(`✅ ${cacheKey} obtenidos y cacheados: ${result.length} items en ${duration}ms`);
+    // console.log(`✅ ${cacheKey} obtenidos y cacheados: ${result.length} items en ${duration}ms`);
     return result;
     
   } catch (error) {
-    console.error(`❌ Error obteniendo ${cacheKey}:`, error.message);
+    // console.error(`❌ Error obteniendo ${cacheKey}:`, error.message);
     
     // Si hay cache, usarlo como fallback
     if (cached && cached.size > 0) {
-      console.log(`🔄 Usando cache expirado de ${cacheKey} como fallback (${cached.size} items)`);
+      // console.log(`🔄 Usando cache expirado de ${cacheKey} como fallback (${cached.size} items)`);
       return Array.from(cached.values());
     }
     
     // Si no hay cache, devolver array vacío
-    console.log(`📭 No hay ${cacheKey} disponibles offline`);
+    // console.log(`📭 No hay ${cacheKey} disponibles offline`);
     return [];
   }
 }
@@ -181,14 +181,14 @@ export const firestoreProxy = {
         };
       });
     } catch (error) {
-      console.error('Error obteniendo post por slug:', error.message);
+      // console.error('Error obteniendo post por slug:', error.message);
       
       // Buscar en cache local
       const cachedPosts = Array.from(localCache.posts.values());
       const cachedPost = cachedPosts.find(post => post.slug === slug);
       
       if (cachedPost) {
-        console.log('📦 Post encontrado en cache local');
+        // console.log('📦 Post encontrado en cache local');
         return cachedPost;
       }
       
@@ -213,7 +213,7 @@ export const firestoreProxy = {
         return { id: docRef.id };
       });
     } catch (error) {
-      console.error('Error creando post:', error);
+      // console.error('Error creando post:', error);
       
       // Fallback: guardar en localStorage para sincronizar después
       const offlinePost = {
@@ -228,7 +228,7 @@ export const firestoreProxy = {
       offlinePosts.push(offlinePost);
       localStorage.setItem('offlinePosts', JSON.stringify(offlinePosts));
       
-      console.log('📱 Post guardado offline para sincronizar después');
+      // console.log('📱 Post guardado offline para sincronizar después');
       return { id: offlinePost.id, isOffline: true };
     }
   },
@@ -261,7 +261,7 @@ export const firestoreProxy = {
         return userData;
       });
     } catch (error) {
-      console.error('Error actualizando usuario:', error);
+      // console.error('Error actualizando usuario:', error);
       
       // Fallback: usar datos locales
       return {
@@ -288,14 +288,14 @@ export const firestoreProxy = {
         await this.createPost(post);
         synced++;
       } catch (error) {
-        console.error('Error sincronizando post offline:', error);
+        // console.error('Error sincronizando post offline:', error);
         failed++;
       }
     }
     
     if (synced > 0) {
       localStorage.removeItem('offlinePosts');
-      console.log(`✅ Sincronizados ${synced} posts offline`);
+      // console.log(`✅ Sincronizados ${synced} posts offline`);
     }
     
     return { synced, failed };

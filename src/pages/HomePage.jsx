@@ -21,7 +21,7 @@ export default function HomePage() {
     try {
       setLoading(true);
       setError('');
-      console.log('🏠 Cargando posts en HomePage...');
+      // console.log('🏠 Cargando posts en HomePage...');
       
       // Cargar solo los primeros 10 posts para mejorar rendimiento
       const data = await fetchPosts(true, 10);
@@ -31,7 +31,7 @@ export default function HomePage() {
         setError('No hay publicaciones disponibles.');
       }
     } catch (err) {
-      console.error('❌ Error cargando posts:', err);
+      // console.error('❌ Error cargando posts:', err);
       setError('No se pudieron cargar las publicaciones. Verifica tu conexión.');
     } finally {
       setLoading(false);

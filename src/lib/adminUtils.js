@@ -6,16 +6,16 @@ export async function ensureAdminAccess(email) {
     const isAdmin = await isEmailAdmin(email);
     
     if (!isAdmin) {
-      console.log(`Agregando ${email} como administrador...`);
+      // console.log(`Agregando ${email} como administrador...`);
       await addAdminEmail(email);
-      console.log(`${email} ahora es administrador`);
+      // console.log(`${email} ahora es administrador`);
       return true;
     }
     
-    console.log(`${email} ya es administrador`);
+    // console.log(`${email} ya es administrador`);
     return true;
   } catch (error) {
-    console.error('Error verificando/agregando admin:', error);
+    // console.error('Error verificando/agregando admin:', error);
     return false;
   }
 }
@@ -24,10 +24,10 @@ export async function ensureAdminAccess(email) {
 export async function checkAdminStatus(email) {
   try {
     const isAdmin = await isEmailAdmin(email);
-    console.log(`Estado de admin para ${email}:`, isAdmin ? 'SÍ es admin' : 'NO es admin');
+    // console.log(`Estado de admin para ${email}:`, isAdmin ? 'SÍ es admin' : 'NO es admin');
     return isAdmin;
   } catch (error) {
-    console.error('Error verificando estado de admin:', error);
+    // console.error('Error verificando estado de admin:', error);
     return false;
   }
 }
@@ -39,11 +39,11 @@ const DEFAULT_ADMIN_EMAILS = [
 
 // Función para inicializar admins por defecto
 export async function initializeDefaultAdmins() {
-  console.log('Verificando administradores por defecto...');
+  // console.log('Verificando administradores por defecto...');
   
   for (const email of DEFAULT_ADMIN_EMAILS) {
     await ensureAdminAccess(email);
   }
   
-  console.log('Verificación de administradores completada');
+  // console.log('Verificación de administradores completada');
 }

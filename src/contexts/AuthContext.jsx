@@ -39,7 +39,7 @@ function detectFirestoreBlock(error) {
   if (isNetworkError && !isFirestoreBlocked) {
     isFirestoreBlocked = true;
     if (shouldLogError()) {
-      console.warn('🚫 Firestore bloqueado por adblocker - Modo offline activado');
+      // console.warn('🚫 Firestore bloqueado por adblocker - Modo offline activado');
     }
   }
   
@@ -54,7 +54,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      console.log('🔐 Estado de autenticación cambió:', currentUser?.email || 'No logueado');
+      // console.log('🔐 Estado de autenticación cambió:', currentUser?.email || 'No logueado');
       
       if (!currentUser) {
         setUser(null);
@@ -72,7 +72,7 @@ export function AuthProvider({ children }) {
           const cachedDoc = userDocCache.get(cacheKey);
           // Cache válido por 10 minutos
           if (Date.now() - cachedDoc.timestamp < 10 * 60 * 1000) {
-            console.log('📦 Usando documento de usuario desde cache');
+            // console.log('📦 Usando documento de usuario desde cache');
             setUserDoc(cachedDoc.data);
             setLoading(false);
             return;
@@ -84,10 +84,10 @@ export function AuthProvider({ children }) {
           throw new Error('Firestore bloqueado - usando fallback');
         }
 
-        console.log('🔄 Obteniendo documento de usuario desde Firestore');
+        // console.log('🔄 Obteniendo documento de usuario desde Firestore');
         const profile = await ensureUserDocument(currentUser);
         
-        console.log('✅ Documento de usuario obtenido:', profile);
+        // console.log('✅ Documento de usuario obtenido:', profile);
         
         // Actualizar cache
         userDocCache.set(cacheKey, {
@@ -101,14 +101,14 @@ export function AuthProvider({ children }) {
         // Reset del estado de bloqueo si fue exitoso
         if (isFirestoreBlocked) {
           isFirestoreBlocked = false;
-          console.log('✅ Firestore reconectado');
+          // console.log('✅ Firestore reconectado');
         }
       } catch (error) {
         const isBlocked = detectFirestoreBlock(error);
         
         if (shouldLogError()) {
-          console.error('❌ No se pudo sincronizar usuario en Firestore:', isBlocked ? 'Bloqueado por adblocker' : error.message);
-          console.log('🔄 Activando modo offline - Firestore bloqueado');
+          // console.error('❌ No se pudo sincronizar usuario en Firestore:', isBlocked ? 'Bloqueado por adblocker' : error.message);
+          // console.log('🔄 Activando modo offline - Firestore bloqueado');
         }
         setIsOffline(true);
         
@@ -124,7 +124,7 @@ export function AuthProvider({ children }) {
           isOfflineFallback: true
         };
         
-        console.log('🔄 Usando fallback offline:', fallbackDoc);
+        // console.log('🔄 Usando fallback offline:', fallbackDoc);
         setUserDoc(fallbackDoc);
         
         // Actualizar cache con fallback
@@ -161,7 +161,7 @@ export function AuthProvider({ children }) {
 
       setUserDoc(profile);
     } catch (error) {
-      console.error('Error creando documento de usuario, usando fallback');
+      // console.error('Error creando documento de usuario, usando fallback');
       const isAdminLocal = isAdminEmail(credential.user.email) || 
                          credential.user.email === 'pederneraleonardo729@gmail.com';
       const fallbackDoc = {
@@ -207,7 +207,7 @@ export function AuthProvider({ children }) {
   // Debug logging
   useEffect(() => {
     if (user && userDoc) {
-      console.log('🎯 Estado final de admin:', {
+      // console.log('🎯 Estado final de admin:', {
         email: user.email,
         role: userDoc.role,
         isAdmin: isAdmin,

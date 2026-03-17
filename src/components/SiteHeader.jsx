@@ -22,7 +22,7 @@ export default function SiteHeader() {
   // GARANTIZAR que aparezca para el email específico
   const shouldShowAdminButton = forceAdmin || isTargetEmail;
 
-  console.log('🔍 SiteHeader - Estado de admin:', {
+  // console.log('🔍 SiteHeader - Estado de admin:', {
     user: !!user,
     email: user?.email,
     isAdmin,

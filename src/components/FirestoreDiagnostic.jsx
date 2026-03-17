@@ -10,7 +10,7 @@ export default function FirestoreDiagnostic() {
   const addLog = (message, type = 'info') => {
     const timestamp = new Date().toLocaleTimeString();
     setLogs(prev => [...prev, { timestamp, message, type }]);
-    console.log(`[${timestamp}] ${message}`);
+    // console.log(`[${timestamp}] ${message}`);
   };
 
   const runDiagnostics = async () => {

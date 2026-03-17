@@ -24,7 +24,7 @@ export default function NotificationModal() {
       
       setShowModal(false);
     } catch (error) {
-      console.error('Error al solicitar permisos de notificación:', error);
+      // console.error('Error al solicitar permisos de notificación:', error);
       setShowModal(false);
     }
   };

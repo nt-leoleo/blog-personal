@@ -52,15 +52,15 @@ export async function optimizeFirestoreConnection() {
     if (!networkEnabled) {
       await enableNetwork(db);
       networkEnabled = true;
-      console.log('🔄 Red de Firestore habilitada');
+      // console.log('🔄 Red de Firestore habilitada');
     }
   } catch (error) {
-    console.warn('⚠️ No se pudo optimizar la conexión:', error.message);
+    // console.warn('⚠️ No se pudo optimizar la conexión:', error.message);
   }
 }
 
 export async function handleFirestoreError(error) {
-  console.error('🔥 Error de Firestore:', error.code, error.message);
+  // console.error('🔥 Error de Firestore:', error.code, error.message);
   
   // Si hay problemas de red, intentar reconectar
   if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
@@ -68,9 +68,9 @@ export async function handleFirestoreError(error) {
       await disableNetwork(db);
       await new Promise(resolve => setTimeout(resolve, 1000));
       await enableNetwork(db);
-      console.log('🔄 Reconexión de Firestore intentada');
+      // console.log('🔄 Reconexión de Firestore intentada');
     } catch (reconnectError) {
-      console.error('❌ Error en reconexión:', reconnectError.message);
+      // console.error('❌ Error en reconexión:', reconnectError.message);
     }
   }
 }

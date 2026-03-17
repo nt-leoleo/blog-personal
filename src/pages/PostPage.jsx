@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+﻿﻿import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { addCommentToPost, fetchComments, fetchPostBySlug } from '../lib/blog';
 import { formatBytes, formatDate } from '../lib/format';
@@ -45,7 +45,7 @@ export default function PostPage() {
           setComments(postComments);
         }
       } catch (err) {
-        console.error(err);
+        // console.error(err);
         if (mounted) {
           setError('No se pudo cargar la publicacion.');
         }
@@ -81,7 +81,7 @@ export default function PostPage() {
       setCommentText('');
       setPost((prev) => (prev ? { ...prev, commentsCount: (prev.commentsCount || 0) + 1 } : prev));
     } catch (err) {
-      console.error(err);
+      // console.error(err);
       setError('No se pudo publicar el comentario.');
     } finally {
       setSavingComment(false);

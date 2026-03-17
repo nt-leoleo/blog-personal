@@ -69,7 +69,7 @@ export default function AdminPage() {
       const data = await fetchPosts(true, 15);
       setPosts(data);
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       setMessage('No se pudieron cargar las publicaciones.');
     } finally {
       setLoadingPosts(false);
@@ -82,7 +82,7 @@ export default function AdminPage() {
       const data = await fetchAdminEmails();
       setAdmins(data);
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       setAdminsMessage('No se pudo cargar la lista de admins.');
     } finally {
       setAdminsLoading(false);
@@ -209,7 +209,7 @@ export default function AdminPage() {
       setMessage('Publicacion creada.');
       await loadPosts();
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       setMessage('No se pudo crear la publicacion. Revisa Firebase/Storage.');
     } finally {
       setSaving(false);
@@ -233,7 +233,7 @@ export default function AdminPage() {
       setAdminsMessage('Admin agregado.');
       await loadAdmins();
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       setAdminsMessage('No se pudo agregar el admin.');
     } finally {
       setAdminActionLoading(false);
@@ -249,7 +249,7 @@ export default function AdminPage() {
       setAdminsMessage('Admin removido.');
       await loadAdmins();
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       setAdminsMessage('No se pudo remover el admin.');
     } finally {
       setAdminActionLoading(false);

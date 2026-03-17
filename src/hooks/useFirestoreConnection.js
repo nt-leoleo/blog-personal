@@ -21,12 +21,12 @@ export function useFirestoreConnection() {
       
       await Promise.race([testQuery, timeoutPromise]);
       
-      console.log('✅ Firestore conectado correctamente');
+      // console.log('✅ Firestore conectado correctamente');
       setIsBlocked(false);
       setConsecutiveFailures(0);
       
     } catch (error) {
-      console.error('❌ Error de conexión a Firestore:', error);
+      // console.error('❌ Error de conexión a Firestore:', error);
       
       const newFailureCount = consecutiveFailures + 1;
       setConsecutiveFailures(newFailureCount);
@@ -44,10 +44,10 @@ export function useFirestoreConnection() {
         error.code === 'permission-denied';
       
       if (isDefinitelyBlocked && !isTemporaryNetworkIssue) {
-        console.warn('🚫 Firestore definitivamente bloqueado después de', newFailureCount, 'intentos');
+        // console.warn('🚫 Firestore definitivamente bloqueado después de', newFailureCount, 'intentos');
         setIsBlocked(true);
       } else {
-        console.log('⚠️ Error temporal de conexión, intento', newFailureCount);
+        // console.log('⚠️ Error temporal de conexión, intento', newFailureCount);
         // No mostrar modal para errores temporales
       }
     } finally {

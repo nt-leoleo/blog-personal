@@ -22,34 +22,34 @@ export async function isEmailAdmin(email = '') {
   const normalized = normalizeEmail(email);
   if (!normalized) return false;
 
-  console.log('🔍 Verificando admin para:', normalized);
+  // console.log('🔍 Verificando admin para:', normalized);
 
   // Verificar primero en las variables de entorno
   if (isAdminEmail(normalized)) {
-    console.log('✅ Es admin por variable de entorno');
+    // console.log('✅ Es admin por variable de entorno');
     return true;
   }
 
   // Verificar en cache
   if (adminEmailsCache && (Date.now() - adminCacheTime) < ADMIN_CACHE_DURATION) {
     const isInCache = adminEmailsCache.includes(normalized);
-    console.log('📦 Verificado en cache:', isInCache);
+    // console.log('📦 Verificado en cache:', isInCache);
     return isInCache;
   }
 
   // Verificar usando el proxy (con reintentos y fallback)
   try {
-    console.log('🔥 Consultando admins via proxy...');
+    // console.log('🔥 Consultando admins via proxy...');
     const adminEmails = await fetchAdminEmails();
     const exists = adminEmails.includes(normalized);
-    console.log('🔥 Resultado proxy:', exists);
+    // console.log('🔥 Resultado proxy:', exists);
     return exists;
   } catch (error) {
-    console.error('❌ Error verificando admin:', error);
+    // console.error('❌ Error verificando admin:', error);
     
     // Fallback: si es el email específico del .env, considerarlo admin
     if (normalized === 'pederneraleonardo729@gmail.com') {
-      console.log('🔄 Fallback: email específico reconocido como admin');
+      // console.log('🔄 Fallback: email específico reconocido como admin');
       return true;
     }
     
@@ -78,11 +78,11 @@ export async function fetchAdminEmails() {
     adminEmailsCache = allAdminEmails;
     adminCacheTime = Date.now();
     
-    console.log('✅ Admin emails obtenidos:', allAdminEmails);
+    // console.log('✅ Admin emails obtenidos:', allAdminEmails);
     return allAdminEmails;
     
   } catch (error) {
-    console.error('❌ Error obteniendo admin emails:', error);
+    // console.error('❌ Error obteniendo admin emails:', error);
     
     // Fallback: usar solo los emails de variables de entorno
     adminEmailsCache = ADMIN_EMAILS;
@@ -113,10 +113,10 @@ export async function addAdminEmail(email) {
     // Invalidar cache
     adminEmailsCache = null;
     
-    console.log('✅ Admin email agregado:', normalized);
+    // console.log('✅ Admin email agregado:', normalized);
     
   } catch (error) {
-    console.error('❌ Error agregando admin email:', error);
+    // console.error('❌ Error agregando admin email:', error);
     throw new Error('No se pudo agregar el administrador. Verifica tu conexión.');
   }
 }
@@ -126,21 +126,21 @@ export async function removeAdminEmail(email) {
   if (!normalized) return;
   
   // TODO: Implementar eliminación en el proxy
-  console.log('⚠️ Eliminación de admin no implementada aún');
+  // console.log('⚠️ Eliminación de admin no implementada aún');
   
   // Invalidar cache
   adminEmailsCache = null;
 }
 
 export async function ensureUserDocument(user) {
-  console.log('👤 Creando/actualizando documento de usuario para:', user.email);
+  // console.log('👤 Creando/actualizando documento de usuario para:', user.email);
   
   try {
     // Verificar si el usuario es admin basado en su email
     const isAdmin = await isEmailAdmin(user.email);
     const role = isAdmin ? 'ADMIN' : 'USER';
     
-    console.log('🔑 Rol asignado:', role, 'para', user.email);
+    // console.log('🔑 Rol asignado:', role, 'para', user.email);
 
     const userData = {
       uid: user.uid,
@@ -153,11 +153,11 @@ export async function ensureUserDocument(user) {
 
     const result = await firestoreProxy.ensureUser(userData);
     
-    console.log('✅ Usuario actualizado via proxy');
+    // console.log('✅ Usuario actualizado via proxy');
     return result;
     
   } catch (error) {
-    console.error('❌ Error actualizando usuario:', error);
+    // console.error('❌ Error actualizando usuario:', error);
     
     // Fallback: crear documento local
     const isAdmin = isAdminEmail(user.email) || user.email === 'pederneraleonardo729@gmail.com';
@@ -181,7 +181,7 @@ export async function getRoleFromUserDoc(uid) {
     const user = users.find(u => u.uid === uid);
     return user?.role || 'USER';
   } catch (error) {
-    console.error('Error obteniendo rol de usuario:', error);
+    // console.error('Error obteniendo rol de usuario:', error);
     return 'USER';
   }
 }

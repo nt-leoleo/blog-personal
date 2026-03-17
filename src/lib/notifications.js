@@ -12,7 +12,7 @@ export function sendPostNotification(postTitle) {
         requireInteraction: false
       });
     } catch (error) {
-      console.error('Error al enviar notificación:', error);
+      // console.error('Error al enviar notificación:', error);
     }
   }
 }
@@ -20,7 +20,7 @@ export function sendPostNotification(postTitle) {
 // Función para verificar y solicitar permisos de notificación
 export async function requestNotificationPermission() {
   if (!('Notification' in window)) {
-    console.log('Este navegador no soporta notificaciones');
+    // console.log('Este navegador no soporta notificaciones');
     return false;
   }
 

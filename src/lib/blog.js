@@ -32,7 +32,7 @@ export async function fetchPosts(useCache = true, limitCount = 20) {
     const posts = await firestoreProxy.getPosts(limitCount);
     return posts.map(formatPostFromDoc);
   } catch (error) {
-    console.error('Error en fetchPosts:', error);
+    // console.error('Error en fetchPosts:', error);
     return [];
   }
 }
@@ -42,7 +42,7 @@ export async function fetchPostBySlug(slug) {
     const post = await firestoreProxy.getPostBySlug(slug);
     return post ? formatPostFromDoc(post) : null;
   } catch (error) {
-    console.error('Error en fetchPostBySlug:', error);
+    // console.error('Error en fetchPostBySlug:', error);
     return null;
   }
 }
@@ -107,7 +107,7 @@ async function uploadMediaFiles(slug, files) {
         size: file.size
       });
     } catch (error) {
-      console.error('Error subiendo archivo:', error);
+      // console.error('Error subiendo archivo:', error);
       // Continuar con otros archivos
     }
   }
@@ -141,14 +141,14 @@ export async function createPost({ title, content, files, user }) {
       isOffline: result.isOffline || false
     };
   } catch (error) {
-    console.error('Error en createPost:', error);
+    // console.error('Error en createPost:', error);
     throw error;
   }
 }
 
 export async function addCommentToPost({ postId, content, user }) {
   // TODO: Implementar comentarios en el proxy
-  console.log('Comentarios no implementados aún en modo proxy');
+  // console.log('Comentarios no implementados aún en modo proxy');
 }
 
 // Funciones de utilidad

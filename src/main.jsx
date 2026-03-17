@@ -9,10 +9,10 @@ import { optimizeFirestoreConnection } from './lib/firebase';
 import './index.css';
 
 // Inicializar optimizaciones de Firestore
-optimizeFirestoreConnection().catch(console.error);
+optimizeFirestoreConnection().catch(() => {});
 
 // Inicializar administradores por defecto
-initializeDefaultAdmins().catch(console.error);
+initializeDefaultAdmins().catch(() => {});
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

@@ -13,12 +13,12 @@ export default function DebugAuth() {
   if (!isDev && !isTargetUser) return null;
 
   const handleForceAdmin = () => {
-    console.log('🔧 Forzando recarga de permisos...');
+    // console.log('🔧 Forzando recarga de permisos...');
     window.location.reload();
   };
 
   const handleClearCache = () => {
-    console.log('🗑️ Limpiando cache...');
+    // console.log('🗑️ Limpiando cache...');
     localStorage.clear();
     sessionStorage.clear();
     window.location.reload();
