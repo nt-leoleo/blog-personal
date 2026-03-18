@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator, enableNetwork, disableNetwork, initializeFirestore } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator, enableNetwork, disableNetwork, initializeFirestore, CACHE_SIZE_UNLIMITED } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const requiredKeys = [
@@ -35,8 +35,10 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 
-// Configurar Auth para no mantener estado persistente innecesario
-auth.settings.appVerificationDisabledForTesting = false;
+// Configurar persistencia local para evitar reconexiones
+setPersistence(auth, browserLocalPersistence).catch(() => {
+  // Ignorar errores de persistencia
+});
 
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
@@ -44,12 +46,13 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-// Inicializar Firestore con configuración optimizada
-// Desactivar listeners en tiempo real para reducir conexiones
+// Inicializar Firestore SIN listeners en tiempo real
+// Solo consultas puntuales para evitar ERR_BLOCKED_BY_CLIENT
 export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: false, // Desactivar long polling
-  experimentalAutoDetectLongPolling: false, // No detectar automáticamente
-  cacheSizeBytes: 40000000, // 40MB de cache local
+  experimentalForceLongPolling: false,
+  experimentalAutoDetectLongPolling: false,
+  cacheSizeBytes: 40000000,
+  ignoreUndefinedProperties: true,
 });
 
 // Configuración de red optimizada

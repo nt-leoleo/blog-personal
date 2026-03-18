@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPost, fetchPosts } from '../lib/blog';
 import { formatBytes, formatDate } from '../lib/format';
 import { addAdminEmail, fetchAdminEmails, removeAdminEmail } from '../lib/users';
@@ -36,6 +36,7 @@ function pickMimeType() {
 
 export default function AdminPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const fileInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -196,8 +197,9 @@ export default function AdminPage() {
       // Enviar notificación del nuevo post
       sendPostNotification(title.trim());
 
-      // El cache se invalida automáticamente en el proxy
-      // invalidatePostsCache(); // Ya no es necesario
+      // Invalidar cache para forzar recarga
+      localStorage.removeItem('firestore_cache_posts');
+      localStorage.removeItem('firestore_cache_timestamps');
 
       setTitle('');
       setContent('');
@@ -207,7 +209,14 @@ export default function AdminPage() {
         fileInputRef.current.value = '';
       }
       setMessage('Publicacion creada.');
-      await loadPosts();
+      
+      // Marcar para forzar recarga en HomePage
+      sessionStorage.setItem('forceReloadPosts', 'true');
+      
+      // Redirigir a la página de inicio después de postear exitosamente
+      setTimeout(() => {
+        navigate('/');
+      }, 1000);
     } catch (error) {
       // console.error(error);
       setMessage('No se pudo crear la publicacion. Revisa Firebase/Storage.');

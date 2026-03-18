@@ -23,6 +23,13 @@ export default function HomePage() {
       setError('');
       // console.log('🏠 Cargando posts en HomePage...');
       
+      // Forzar recarga sin cache si venimos de crear un post
+      const forceReload = sessionStorage.getItem('forceReloadPosts') === 'true';
+      if (forceReload) {
+        localStorage.removeItem('firestore_cache_posts');
+        sessionStorage.removeItem('forceReloadPosts');
+      }
+      
       // Cargar solo los primeros 8 posts para mejorar rendimiento
       const data = await fetchPosts(true, 8);
       setPosts(data);
