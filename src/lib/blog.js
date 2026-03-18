@@ -48,9 +48,12 @@ export async function fetchPostBySlug(slug) {
 }
 
 export async function fetchComments(postId, limitCount = 50) {
-  // Los comentarios se manejan por separado por ahora
-  // TODO: Implementar en el proxy si es necesario
-  return [];
+  try {
+    return await firestoreProxy.getComments(postId, limitCount);
+  } catch (error) {
+    // console.error('Error en fetchComments:', error);
+    return [];
+  }
 }
 
 function makeBaseSlug(title) {
@@ -150,8 +153,18 @@ export async function createPost({ title, content, files, user }) {
 }
 
 export async function addCommentToPost({ postId, content, user }) {
-  // TODO: Implementar comentarios en el proxy
-  // console.log('Comentarios no implementados aún en modo proxy');
+  try {
+    const commentData = {
+      content,
+      userId: user.uid,
+      userName: user.displayName || user.email || 'Anónimo'
+    };
+    
+    return await firestoreProxy.createComment(postId, commentData);
+  } catch (error) {
+    // console.error('Error en addCommentToPost:', error);
+    throw error;
+  }
 }
 
 // Funciones de utilidad

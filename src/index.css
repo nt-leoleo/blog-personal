@@ -192,7 +192,65 @@ h3 {
 .post-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: 1fr;
+}
+
+.post-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.post-card-twitter {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 16px;
+  transition: background 0.2s ease;
+  cursor: pointer;
+}
+
+.post-card-twitter:hover {
+  background: var(--hover);
+}
+
+.post-card-twitter h3 {
+  margin: 8px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.post-content-full {
+  margin: 12px 0;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.post-content-full p {
+  margin: 4px 0;
+  font-size: 0.9375rem;
+}
+
+.post-media-preview {
+  margin: 12px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  max-height: 400px;
+}
+
+.post-media-preview img,
+.post-media-preview video {
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  object-fit: cover;
+  display: block;
+}
+
+.post-stats {
+  margin-top: 12px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
 }
 
 .post-card {

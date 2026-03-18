@@ -94,23 +94,39 @@ export default function HomePage() {
             {posts.map((post) => {
               const firstMedia = post.media?.[0];
               return (
-                <article key={post.id} className="post-card">
-                  <div className="meta-row">
-                    <span>{formatDate(post.createdAt)}</span>
-                    <span>{post.commentsCount || 0} comentarios</span>
-                  </div>
+                <Link key={post.id} to={`/posts/${post.slug}`} className="post-card-link">
+                  <article className="post-card-twitter">
+                    <div className="meta-row">
+                      <span>{post.authorName || 'Admin'}</span>
+                      <span>{formatDate(post.createdAt)}</span>
+                    </div>
 
-                  <h3>
-                    <Link to={`/posts/${post.slug}`}>{post.title}</Link>
-                  </h3>
+                    <h3>{post.title}</h3>
 
-                  <p className="excerpt">{post.content}</p>
+                    <div className="post-content-full">
+                      {post.content.split('\n').map((line, i) => (
+                        <p key={i}>{line || '\u00A0'}</p>
+                      ))}
+                    </div>
 
-                  <div className="chip-row">
-                    <span className="chip">{post.mediaCount || 0} adjunto{post.mediaCount === 1 ? '' : 's'}</span>
-                    {firstMedia?.mimeType && <span className="chip">{mediaLabel(firstMedia.mimeType)}</span>}
-                  </div>
-                </article>
+                    {firstMedia?.mimeType?.startsWith('image/') && (
+                      <div className="post-media-preview">
+                        <img src={firstMedia.url} alt={post.title} loading="lazy" />
+                      </div>
+                    )}
+
+                    {firstMedia?.mimeType?.startsWith('video/') && (
+                      <div className="post-media-preview">
+                        <video src={firstMedia.url} controls preload="metadata" />
+                      </div>
+                    )}
+
+                    <div className="post-stats">
+                      <span>{post.commentsCount || 0} comentarios</span>
+                      {post.mediaCount > 0 && <span>· {post.mediaCount} adjunto{post.mediaCount === 1 ? '' : 's'}</span>}
+                    </div>
+                  </article>
+                </Link>
               );
             })}
           </div>

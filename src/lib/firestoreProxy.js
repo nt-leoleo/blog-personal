@@ -317,6 +317,52 @@ export const firestoreProxy = {
     return { synced, failed };
   },
 
+  // Obtener comentarios de un post
+  async getComments(postId, limitCount = 50) {
+    try {
+      return await retryOperation(async () => {
+        const snapshot = await getDocs(
+          query(
+            collection(db, 'posts', postId, 'comments'),
+            orderBy('createdAt', 'desc'),
+            limit(limitCount)
+          )
+        );
+        
+        return snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            content: data.content,
+            userName: data.userName,
+            userId: data.userId,
+            createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt)
+          };
+        });
+      });
+    } catch (error) {
+      // console.error('Error obteniendo comentarios:', error);
+      return [];
+    }
+  },
+
+  // Crear comentario
+  async createComment(postId, commentData) {
+    try {
+      return await retryOperation(async () => {
+        const docRef = await addDoc(collection(db, 'posts', postId, 'comments'), {
+          ...commentData,
+          createdAt: serverTimestamp()
+        });
+        
+        return { id: docRef.id };
+      });
+    } catch (error) {
+      // console.error('Error creando comentario:', error);
+      throw error;
+    }
+  },
+
   // Verificar conectividad
   async checkConnection() {
     try {
