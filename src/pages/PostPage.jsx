@@ -135,6 +135,18 @@ export default function PostPage() {
                 );
               }
 
+              if (file.mimeType?.startsWith('video/')) {
+                return (
+                  <figure key={file.url} className="media-card">
+                    <video controls preload="metadata" style={{ width: '100%', maxHeight: '600px' }}>
+                      <source src={file.url} type={file.mimeType} />
+                      Tu navegador no soporta videos.
+                    </video>
+                    <figcaption>{file.fileName}</figcaption>
+                  </figure>
+                );
+              }
+
               if (file.mimeType?.startsWith('audio/')) {
                 return (
                   <div key={file.url} className="media-card audio-card">

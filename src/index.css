@@ -266,21 +266,24 @@ h3 {
 
 .media-grid {
   display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+  grid-template-columns: 1fr;
 }
 
 .media-card {
   overflow: hidden;
   border-radius: 12px;
   background: var(--bg-secondary);
+  width: 100%;
 }
 
 .media-card img {
   width: 100%;
-  height: 200px;
-  object-fit: cover;
+  height: auto;
+  max-height: 600px;
+  object-fit: contain;
   display: block;
+  background: var(--bg-secondary);
 }
 
 .media-card figcaption,
@@ -289,6 +292,14 @@ h3 {
   padding: 12px;
   font-size: 0.875rem;
   color: var(--text-secondary);
+}
+
+.media-card video {
+  width: 100%;
+  height: auto;
+  max-height: 600px;
+  display: block;
+  background: var(--bg-secondary);
 }
 
 .audio-card audio {

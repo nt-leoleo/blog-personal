@@ -4,7 +4,8 @@ import {
   doc, 
   getDocs, 
   addDoc, 
-  updateDoc, 
+  updateDoc,
+  setDoc,
   query, 
   orderBy, 
   limit, 
@@ -263,10 +264,11 @@ export const firestoreProxy = {
     try {
       return await retryOperation(async () => {
         const userRef = doc(db, 'users', userData.uid);
-        await updateDoc(userRef, {
+        // Usar setDoc con merge para crear o actualizar
+        await setDoc(userRef, {
           ...userData,
           updatedAt: serverTimestamp()
-        });
+        }, { merge: true });
         
         // Invalidar cache de usuarios
         localCache.users.clear();

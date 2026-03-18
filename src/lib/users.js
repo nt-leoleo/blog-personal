@@ -58,21 +58,24 @@ export async function isEmailAdmin(email = '') {
 }
 
 export async function fetchAdminEmails() {
+  // Siempre empezar con los emails del .env
+  const envAdmins = [...ADMIN_EMAILS];
+  
   // Verificar cache
   if (adminEmailsCache && (Date.now() - adminCacheTime) < ADMIN_CACHE_DURATION) {
     return adminEmailsCache;
   }
 
   try {
-    // Usar el proxy para obtener usuarios y filtrar admins
+    // Intentar obtener usuarios de Firestore
     const users = await firestoreProxy.getUsers();
-    const adminEmails = users
+    const firestoreAdmins = users
       .filter(user => user.role === 'ADMIN')
       .map(user => user.email)
       .filter(Boolean);
     
-    // Agregar emails de variables de entorno
-    const allAdminEmails = [...new Set([...ADMIN_EMAILS, ...adminEmails])];
+    // Combinar emails del .env con los de Firestore (sin duplicados)
+    const allAdminEmails = [...new Set([...envAdmins, ...firestoreAdmins])];
     
     // Actualizar cache
     adminEmailsCache = allAdminEmails;
@@ -82,13 +85,14 @@ export async function fetchAdminEmails() {
     return allAdminEmails;
     
   } catch (error) {
-    // console.error('❌ Error obteniendo admin emails:', error);
+    // console.error('❌ Error obteniendo admin emails de Firestore:', error);
     
     // Fallback: usar solo los emails de variables de entorno
-    adminEmailsCache = ADMIN_EMAILS;
+    adminEmailsCache = envAdmins;
     adminCacheTime = Date.now();
     
-    return ADMIN_EMAILS;
+    // console.log('📦 Usando admins del .env:', envAdmins);
+    return envAdmins;
   }
 }
 
@@ -100,12 +104,17 @@ export async function addAdminEmail(email) {
 
   try {
     // Crear un usuario admin usando el proxy
+    // Generar un UID único basado en el email
+    const uid = `admin_${normalized.replace(/[^a-z0-9]/g, '_')}`;
+    
     const adminUser = {
-      uid: `admin_${Date.now()}`,
+      uid: uid,
       email: normalized,
       role: 'ADMIN',
       name: null,
-      photoURL: null
+      photoURL: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     
     await firestoreProxy.ensureUser(adminUser);
