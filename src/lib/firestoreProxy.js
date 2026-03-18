@@ -23,11 +23,11 @@ const localCache = {
   }
 };
 
-// Configuración optimizada para velocidad
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos - cache más largo
-const RETRY_ATTEMPTS = 1; // Solo 1 reintento
-const RETRY_DELAY = 300; // 300ms
-const OPERATION_TIMEOUT = 5000; // 5 segundos máximo
+// Configuración optimizada para velocidad y menos errores
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutos - cache más largo
+const RETRY_ATTEMPTS = 1; // Sin reintentos - fallar rápido
+const RETRY_DELAY = 500; // 500ms
+const OPERATION_TIMEOUT = 3000; // 3 segundos máximo - reducido
 
 // Cargar cache desde localStorage al iniciar
 function loadCacheFromStorage() {
@@ -69,23 +69,17 @@ function saveCacheToStorage() {
 
 // Función para reintentar operaciones con timeout
 async function retryOperation(operation, attempts = RETRY_ATTEMPTS) {
-  for (let i = 0; i < attempts; i++) {
-    try {
-      // Agregar timeout a cada operación
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Operation timeout')), OPERATION_TIMEOUT);
-      });
-      
-      const result = await Promise.race([operation(), timeoutPromise]);
-      return result;
-    } catch (error) {
-      if (i === attempts - 1) {
-        throw error;
-      }
-      
-      // Delay mínimo antes de reintentar
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-    }
+  try {
+    // Agregar timeout a la operación
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Operation timeout')), OPERATION_TIMEOUT);
+    });
+    
+    const result = await Promise.race([operation(), timeoutPromise]);
+    return result;
+  } catch (error) {
+    // No reintentar - fallar rápido y usar cache
+    throw error;
   }
 }
 

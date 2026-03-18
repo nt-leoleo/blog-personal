@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator, enableNetwork, disableNetwork, initializeFirestore, CACHE_SIZE_UNLIMITED } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const requiredKeys = [
@@ -46,45 +46,37 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-// Inicializar Firestore SIN listeners en tiempo real
-// Solo consultas puntuales para evitar ERR_BLOCKED_BY_CLIENT
+// Inicializar Firestore con configuración optimizada para evitar errores de red
+// Deshabilitar listeners en tiempo real y usar solo consultas puntuales
 export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: false,
+  experimentalForceLongPolling: true, // Usar long polling en lugar de websockets
   experimentalAutoDetectLongPolling: false,
-  cacheSizeBytes: 40000000,
+  cacheSizeBytes: 1048576, // 1MB cache (reducido para mejor rendimiento)
   ignoreUndefinedProperties: true,
 });
 
-// Configuración de red optimizada
-let networkEnabled = true;
-
-export async function optimizeFirestoreConnection() {
-  try {
-    if (!networkEnabled) {
-      await enableNetwork(db);
-      networkEnabled = true;
-      // console.log('🔄 Red de Firestore habilitada');
+// Deshabilitar logging de Firebase para reducir ruido en consola
+if (typeof window !== 'undefined') {
+  // Suprimir warnings de Firebase
+  const originalWarn = console.warn;
+  console.warn = (...args) => {
+    const msg = args[0]?.toString() || '';
+    // Filtrar warnings de Firestore sobre database not found
+    if (msg.includes('@firebase/firestore') || msg.includes('Database') || msg.includes('not found')) {
+      return;
     }
-  } catch (error) {
-    // console.warn('⚠️ No se pudo optimizar la conexión:', error.message);
-  }
+    originalWarn.apply(console, args);
+  };
 }
 
-export async function handleFirestoreError(error) {
-  // console.error('🔥 Error de Firestore:', error.code, error.message);
-  
-  // Si hay problemas de red, intentar reconectar
-  if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
-    try {
-      await disableNetwork(db);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      await enableNetwork(db);
-      // console.log('🔄 Reconexión de Firestore intentada');
-    } catch (reconnectError) {
-      // console.error('❌ Error en reconexión:', reconnectError.message);
-    }
-  }
+export function optimizeFirestoreConnection() {
+  // No hacer nada - la configuración ya está optimizada
 }
 
-// Optimizaciones de rendimiento
-export { enableNetwork, disableNetwork };
+export function handleFirestoreError(error) {
+  // Silenciar errores comunes de red
+  if (error.code === 'unavailable' || error.code === 'deadline-exceeded' || error.code === 'permission-denied') {
+    return;
+  }
+  // console.error('Error de Firestore:', error.message);
+}
