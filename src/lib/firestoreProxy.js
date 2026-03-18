@@ -11,7 +11,7 @@ import {
   where,
   serverTimestamp 
 } from 'firebase/firestore';
-import { db, handleFirestoreError, optimizeFirestoreConnection } from './firebase';
+import { db, handleFirestoreError } from './firebase';
 
 // Cache local robusto con persistencia
 const localCache = {
