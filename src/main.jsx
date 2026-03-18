@@ -9,7 +9,7 @@ import { optimizeFirestoreConnection } from './lib/firebase';
 import './index.css';
 
 // Inicializar optimizaciones de Firestore
-optimizeFirestoreConnection().catch(() => {});
+optimizeFirestoreConnection();
 
 // Inicializar administradores por defecto
 initializeDefaultAdmins().catch(() => {});
