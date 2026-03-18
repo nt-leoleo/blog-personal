@@ -5,11 +5,7 @@ import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { initializeDefaultAdmins } from './lib/adminUtils';
-import { optimizeFirestoreConnection } from './lib/firebase';
 import './index.css';
-
-// Inicializar optimizaciones de Firestore
-optimizeFirestoreConnection();
 
 // Inicializar administradores por defecto
 initializeDefaultAdmins().catch(() => {});
