@@ -36,9 +36,13 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
 // Configurar persistencia local para evitar reconexiones
-setPersistence(auth, browserLocalPersistence).catch(() => {
-  // Ignorar errores de persistencia
-});
+try {
+  setPersistence(auth, browserLocalPersistence).catch(() => {
+    // Ignorar errores de persistencia
+  });
+} catch (error) {
+  // Ignorar si setPersistence no está disponible
+}
 
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
