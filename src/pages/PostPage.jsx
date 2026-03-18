@@ -1,8 +1,9 @@
-﻿﻿import { useEffect, useState } from 'react';
+﻿﻿iimport { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { addCommentToPost, fetchComments, fetchPostBySlug } from '../lib/blog';
 import { formatBytes, formatDate } from '../lib/format';
 import { useAuth } from '../contexts/AuthContext';
+import { sendCommentNotification } from '../lib/notifications';
 
 function renderParagraphs(content) {
   return content
@@ -13,7 +14,7 @@ function renderParagraphs(content) {
 
 export default function PostPage() {
   const { slug } = useParams();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
@@ -80,6 +81,10 @@ export default function PostPage() {
       setComments(postComments);
       setCommentText('');
       setPost((prev) => (prev ? { ...prev, commentsCount: (prev.commentsCount || 0) + 1 } : prev));
+      
+      // Enviar notificación a los admins
+      const userName = user.displayName || user.email || 'Anónimo';
+      sendCommentNotification(userName, content, post.title, isAdmin);
     } catch (err) {
       // console.error(err);
       setError('No se pudo publicar el comentario.');

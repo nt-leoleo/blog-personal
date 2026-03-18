@@ -1,14 +1,16 @@
-﻿import { useState } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import AccountModal from './AccountModal';
-import { MoonIcon, SunIcon } from './Icons';
+import { MoonIcon, SunIcon, BellIcon, BellActiveIcon, BellOffIcon } from './Icons';
+import { toggleNotifications, areNotificationsEnabled } from '../lib/notifications';
 
 export default function SiteHeader() {
   const { user, isAdmin, userDoc, isOffline } = useAuth();
   const { isDarkMode, toggleDarkMode } = useTheme();
   const [showAccountModal, setShowAccountModal] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   // FORZAR ADMIN - verificaciones múltiples y específicas
   const isTargetEmail = user?.email === 'pederneraleonardo729@gmail.com';
@@ -21,6 +23,16 @@ export default function SiteHeader() {
 
   // GARANTIZAR que aparezca para el email específico
   const shouldShowAdminButton = forceAdmin || isTargetEmail;
+
+  // Verificar estado de notificaciones al cargar
+  useEffect(() => {
+    setNotificationsEnabled(areNotificationsEnabled());
+  }, []);
+
+  const handleToggleNotifications = async () => {
+    const newState = await toggleNotifications();
+    setNotificationsEnabled(newState);
+  };
 
   // console.log('🔍 SiteHeader - Estado de admin:', {
   //   user: !!user,
@@ -63,6 +75,18 @@ export default function SiteHeader() {
           </div>
 
           <div className="site-header__actions">
+            <button
+              onClick={handleToggleNotifications}
+              className="notification-toggle"
+              title={notificationsEnabled ? 'Notificaciones activadas' : 'Notificaciones desactivadas'}
+            >
+              {notificationsEnabled ? (
+                <BellActiveIcon size={20} />
+              ) : (
+                <BellOffIcon size={20} />
+              )}
+            </button>
+
             <button
               onClick={toggleDarkMode}
               className="theme-toggle"

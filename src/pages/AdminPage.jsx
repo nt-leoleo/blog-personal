@@ -187,15 +187,24 @@ export default function AdminPage() {
     setSaving(true);
 
     try {
-      await createPost({
+      const result = await createPost({
         title: title.trim(),
         content: content.trim(),
         files: allFiles,
         user
       });
 
-      // Enviar notificación del nuevo post
-      sendPostNotification(title.trim());
+      // Obtener la primera imagen si existe
+      const firstImage = allFiles.find(f => f.type?.startsWith('image/'));
+      let imageUrl = null;
+      
+      if (firstImage) {
+        // Crear URL temporal para la notificación
+        imageUrl = URL.createObjectURL(firstImage);
+      }
+
+      // Enviar notificación del nuevo post con preview
+      sendPostNotification(title.trim(), content.trim(), imageUrl);
 
       // Invalidar cache para forzar recarga
       localStorage.removeItem('firestore_cache_posts');
